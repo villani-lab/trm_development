@@ -1,11 +1,14 @@
 ---
 title: "Figure 1"
-output: html_document
+output: rmarkdown::github_document
 ---
 
 ```{r message=FALSE}
 library(reticulate)
-# knitr::knit_engines$set(python = reticulate::eng_python)
+library(gtools)
+library(tidyverse)
+library(ggplot2)
+
 use_python("/projects/home/nealpsmith/.conda/envs/old_peg_github/bin/python")
 ```
 
@@ -40,9 +43,21 @@ mpl.rcParams['axes.spines.top'] = False
 # Set a colormap
 gene_colormap = clr.LinearSegmentedColormap.from_list('gene_cmap', ["#e0e0e1", '#4576b8', '#02024a'], N=200)
 
+cmap = cm.get_cmap('YlOrRd', 110)    # PiYG
+hex_list = []
+for i in range(cmap.N):
+    rgba = cmap(i)
+    # rgb2hex accepts rgb or rgba
+    hex_list.append(mpl.colors.rgb2hex(rgba))
+
+colors = [c for n, c in enumerate(hex_list) if n%10 == 0]
+colors = colors [1:11] # First one is too dim
+days = ["0", "2", "5", "10", "15", "20", "25", "30", "45", "60"]
+
+day_col_dict = dict(zip(days, colors))
+day_cmap = clr.LinearSegmentedColormap.from_list('day_cmap', colors, N=len(colors))
+
 # Set a switcher up so the script will run on any computer
-
-
 def file_path(user = getpass.getuser()):
     switcher = {
             "nealp": "C:/Users/nealp/Documents/Dropbox (Partners HealthCare)/Chloe&Mazen/Collaborator_projects/Kupper_TRM/neal_analysis/all_data_analysis",
@@ -172,4 +187,71 @@ cb.update_ticks()
 
 fig
 
+```
+
+
+```{python calc_props_by_time}
+
+clust_perc_by_day = pd.DataFrame(filtered2_no_skin2.obs.groupby(["new_clusters", "day"])["day"].count()) \
+        .rename(columns={"day": "n_cells"}) \
+        .reset_index()
+clust_perc_by_day["perc"] = clust_perc_by_day.groupby(["new_clusters"])["n_cells"].transform(lambda x: x / x.sum())
+
+clust_perc_by_tissue = pd.DataFrame(filtered2_no_skin2.obs.groupby(["new_clusters", "tissue"])["tissue"].count()) \
+        .rename(columns={"tissue": "n_cells"}) \
+        .reset_index()
+clust_perc_by_tissue["perc"] = clust_perc_by_tissue.groupby(["new_clusters"])["n_cells"].transform(
+    lambda x: x / x.sum())
+
+```
+
+```{r 1D_E_bars}
+
+prop_info <- reticulate::py$clust_perc_by_day
+prop_info$day <- factor(prop_info$day, levels = unique(prop_info$day))
+prop_info$new_clusters <- factor(prop_info$new_clusters, levels = mixedsort(unique(prop_info$new_clusters)))
+
+ggplot(prop_info, aes(y = new_clusters, x = perc, fill = day)) +
+  geom_bar(stat = "identity") +
+  scale_y_discrete(limits = rev) +
+  scale_fill_manual(values = c('#fff2ac', '#ffe48c', '#fed16e', '#feb54f', '#fd9941', '#fd7435',
+                               '#f94728', '#e6211e', '#cc0a22', '#a80026')) +
+  theme_classic(base_size = 20) +
+  ylab("") + xlab("cell fraction") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+
+prop_info <- reticulate::py$clust_perc_by_tissue
+colnames(prop_info)[colnames(prop_info) == "tissue"] <- "source"
+prop_info$source[prop_info$source == "LN"] <- "dLN"
+prop_info$source <- factor(prop_info$source, levels = c("Naive", "Skin", "dLN"))
+prop_info$new_clusters <- factor(prop_info$new_clusters, levels = mixedsort(unique(prop_info$new_clusters)))
+
+ggplot(prop_info, aes(y = new_clusters, x = perc, fill = source)) +
+  geom_bar(stat = "identity") +
+  scale_y_discrete(limits = rev) +
+  scale_fill_manual(values = c('#1f77b4', '#ff7f0e', '#2ca02c')) +
+  theme_classic(base_size = 20) +
+  ylab("") + xlab("cell fraction") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+
+```
+
+
+```{python 1F}
+
+markers = ["Sell", "Tcf7", "Tnfrsf18", "Gzmb", "Ctla2a", "Itgae", "Junb", "Ezh2", "Eif3b", "Tnf",
+           "Cd69", "Ccl5", "Il7r", "Ifit3", "Isg15", "Mki67", "Stmn1", "Fut7", "Fabp5", "H2-Ab1",
+           "H2-Eb1", "Ccr7"]
+
+plot = sc.pl.dotplot(filtered2_no_skin2, markers, groupby="new_clusters",
+                     show=False, return_fig=True, title="cannonical markers",
+                     cmap = "Blues", standard_scale = "var")
+axes_dict = plot.get_axes()
+axes_dict["mainplot_ax"].set_axisbelow(True)
+axes_dict["mainplot_ax"].grid()
+fig = plt.gcf()
+fig.set_size_inches(6, 5)
+plt.subplots_adjust(left = 0.1, bottom = 0.2)
+fig.tight_layout()
+fig
 ```
