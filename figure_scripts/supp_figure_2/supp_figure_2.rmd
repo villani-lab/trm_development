@@ -1,0 +1,287 @@
+---
+title: "Supplemental figure 2"
+output: rmarkdown::github_document
+---
+
+```{r message=FALSE}
+library(reticulate)
+library(gtools)
+library(tidyverse)
+library(ggplot2)
+library(DESeq2)
+library(glue)
+library(magrittr)
+library(VennDiagram)
+library(ComplexHeatmap)
+library(circlize)
+library(ggpubr)
+library(ggrepel)
+
+use_python("/projects/home/nealpsmith/.conda/envs/old_peg_github/bin/python")
+```
+
+
+```{python message=FALSE}
+import getpass
+import pegasus as pg
+import scanpy as sc
+import os
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import anndata
+import math
+import seaborn as sns
+import matplotlib.colors as clr
+from pylab import cm
+import matplotlib as mpl
+from matplotlib.lines import Line2D
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from scipy.sparse import csr_matrix
+from collections import Counter
+import wot
+import pickle
+
+from cellrank.external.kernels import WOTKernel
+from cellrank.tl.kernels import ConnectivityKernel
+from cellrank.tl.estimators import GPCCA
+from mpl_toolkits.axes_grid1 import make_axes_locatable, Size
+
+mpl.rcParams['axes.spines.right'] = False
+mpl.rcParams['axes.spines.top'] = False
+# mpl.rcParams['pdf.fonttype'] = 42
+
+# Set a colormap
+gene_colormap = clr.LinearSegmentedColormap.from_list('gene_cmap', ["#e0e0e1", '#4576b8', '#02024a'], N=200)
+
+# Set a switcher up so the script will run on any computer
+def file_path(user = getpass.getuser()):
+    switcher = {
+            "nealp": "C:/Users/nealp/Documents/Dropbox (Partners HealthCare)/Chloe&Mazen/Collaborator_projects/Kupper_TRM/neal_analysis/all_data_analysis",
+            "neal": "/home/neal/Documents/Dropbox (Partners HealthCare)/Chloe&Mazen/Collaborator_projects/Kupper_TRM/neal_analysis/all_data_analysis",
+            "nealpsmith": "/projects/home/nealpsmith/projects/kupper/all_data_analysis"
+
+    }
+    if switcher.get(user):
+        return(switcher.get(user))
+    else :
+        print("Add your local filepath to the switcher! run getpass.getuser() to get your ID")
+
+filtered2_no_skin2 = pg.read_input(
+    os.path.join(file_path(), "data", "integrated", "filtered2_no_skin2_harmonized_with_subclust.h5ad"))
+
+```
+
+
+```{r figure_S2A, message = FALSE, warning = FALSE, fig.width = 6, fig.height = 12}
+
+count_mtx <- read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/filtered2_no_skin2_harmonized_new_clusters_pseudobulk_on_cluster_only_counts.csv",
+                      row.names = 1)
+meta_data <- read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/filtered2_no_skin2_harmonized_new_clusters_pseudobulk_on_cluster_only_meta.csv",
+                      row.names = 1)
+
+annotation_info <- read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/heatmap_info/filtered2_no_skin2_annotation_genes.csv", row.names = 1)
+colnames(annotation_info) <- sapply(str_replace(colnames(annotation_info), "_", " "), str_to_title)
+norm_counts <- apply(count_mtx, 2, function(c){
+  n_total <- sum(c)
+  per_100k <- (c * 1000000) / n_total
+  return(per_100k)
+})
+norm_counts <- log1p(norm_counts)
+
+all_genes <- apply(annotation_info, 2, function(c){
+  genes <- c[0:(nrow(annotation_info) - 3)]
+  genes <- genes[genes != ""]
+  return(genes)
+}) %>%
+  unlist(use.names = FALSE)
+heatmap_data <- norm_counts[unique(all_genes),]
+heatmap_data <- t(scale(t(heatmap_data)))
+colnames(heatmap_data) <- sapply(colnames(heatmap_data), function(x) paste("Cluster", strsplit(x, "_")[[1]][2]))
+
+clustering = hclust(dist(t(heatmap_data), method = "euclidean"), method = "ward.D2")
+col_hc <- as.dendrogram(clustering)
+
+order <- clustering$labels[clustering$order]
+
+gene_order <- lapply(order, function(x){
+  genes <- annotation_info[[x]][1:(nrow(annotation_info) - 3)]
+  genes <- genes[genes != ""]
+  return(genes)
+}) %>%
+  unlist(use.names = FALSE)
+
+heatmap_data = heatmap_data[gene_order,]
+
+
+label_genes <- lapply(colnames(annotation_info), function(c){
+  genes <- as.character(unlist(annotation_info[1:4,c]))
+  return(genes)
+})
+names(label_genes) <- colnames(annotation_info)
+
+# Some custom labelings for interesting genes
+label_genes$`Cluster 6` <- c("Nfkbid", "Cd69", "Klf6", "Tnf")
+label_genes$`Cluster 3` <- c("Nabp1", "Foxo1", "Il21r", "Cwc25")
+label_genes$`Cluster 2` <- c("Lpxn", "Ifngr1", "Stat4", "Tnfrsf18")
+
+annotation_genes <- unlist(label_genes, use.names = FALSE)
+
+# Now lets organize the color info that will be used for annotations
+col_info = annotation_info %>%
+  t() %>%
+  as.data.frame() %>%
+  dplyr::select(-mean_genes) %>%
+  rownames_to_column(var = "cluster") %>%
+  reshape2::melt(id.vars = c("cluster", "col")) %>%
+  select(-variable)
+
+
+# Get the gene colors
+gene_cols = c()
+for (gene in annotation_genes){
+  color = as.character(filter(col_info, value == gene)["col"][[1]])
+  gene_cols = c(gene_cols, color)
+}
+
+
+mean_genes <- annotation_info["mean_genes",] %>%
+  mutate_each(funs(as.numeric(as.character(.)))) %>%
+  select(colnames(heatmap_data)) # To order them like they will be ordered in the heatmap (same as how GEX data was read in)
+
+gene_col_fun <- colorRamp2(c(min(mean_genes), max(mean_genes)), c("#1d111d", "#bbe7c8"))
+gene_bar <-  HeatmapAnnotation("mean # genes" = as.numeric(mean_genes), col = list("mean # genes" = gene_col_fun), show_legend = FALSE)
+gene_lgd <- Legend(col_fun = gene_col_fun, title = "# genes", legend_height = unit(4, "cm"), title_position = "topcenter")
+
+
+heatmap_col_fun = colorRamp2(c(min(heatmap_data), 0, max(heatmap_data)), c("purple", "black", "yellow"))
+heatmap_lgd = Legend(col_fun = heatmap_col_fun, title = "z-score", legend_height = unit(4, "cm"), title_position = "topcenter")
+
+lgd_list <- packLegend(heatmap_lgd, gene_lgd, column_gap = unit(1,"cm"), direction = "horizontal")
+
+
+split <- c()
+for (gene in rownames(heatmap_data)){
+  for (cl in order){
+    if(gene %in% annotation_info[[cl]]){
+      split <- c(split, sub("Cluster", "", cl))
+      break
+    }
+  }
+}
+split <- factor(split, levels = as.character(unique(split)))
+
+
+# Get the cluster colors
+col_label_colors <- c()
+for (clust in colnames(heatmap_data)){
+  color <- col_info %>%
+    select(cluster, col) %>%
+    distinct() %>%
+    filter(cluster == clust)
+  col_label_colors <- c(col_label_colors, as.character(color$col))
+}
+
+# Make block annotation
+clust_cols <- c()
+for (clust in order){
+  color <- col_info %>%
+    select(cluster, col) %>%
+    distinct() %>%
+    filter(cluster == clust)
+  clust_cols <- c(clust_cols, as.character(color$col))
+}
+
+left_annotation =   HeatmapAnnotation(blk = anno_block(gp = gpar(fill = clust_cols, col = clust_cols)),
+                                      which = "row", width = unit(1.5, "mm"))
+heatmap_list = Heatmap(heatmap_data, name = "z-score", col = heatmap_col_fun, cluster_rows = FALSE, cluster_columns = col_hc,
+                       clustering_method_columns = "ward.D2", clustering_distance_columns = "euclidean",
+                       column_dend_reorder = FALSE, top_annotation = gene_bar, show_heatmap_legend = FALSE,
+                       column_names_gp = gpar(col = col_label_colors, fontface = "bold"),
+                       split = split, left_annotation = left_annotation, show_column_names = TRUE) +
+  rowAnnotation(link = anno_mark(at = match(annotation_genes, rownames(heatmap_data)),labels = annotation_genes,
+                                 labels_gp = gpar(col = gene_cols, fontsize = 12, fontface = "bold")))
+draw(heatmap_list, heatmap_legend_list =lgd_list, padding = unit(c(0.5, 0.5, 2, 2), "cm"))
+
+```
+
+```{r figure_S2B}
+cell_data = read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/filtered2_no_skin2_harmonized_with_subclust_obs.csv",
+                     row.names = 1)
+cell_data$tissue[cell_data$tissue == "LN"] <- "dLN"
+cell_data$tissue[cell_data$tissue == "Naive"] <- "dLN"
+
+cell_data$new_clusters <- paste("C", cell_data$new_clusters, sep = "")
+prop_info <- cell_data %>%
+  dplyr::select(tissue,new_clusters, day) %>%
+  dplyr::filter(tissue != "Naive") %>%
+  group_by(tissue, day, new_clusters) %>%
+  summarise(n_cells = n()) %>%
+  group_by(day, tissue) %>%
+  mutate("n_cell_tissue_day" = sum(n_cells)) %>%
+  mutate("perc" = n_cells / n_cell_tissue_day)
+
+
+prop_info$day <- factor(prop_info$day, levels = unique(prop_info$day))
+prop_info$new_clusters <- factor(prop_info$new_clusters, levels = mixedsort(unique(prop_info$new_clusters)))
+
+ggplot(prop_info, aes(y = day, x = perc, fill = new_clusters)) +
+  geom_bar(stat = "identity") +
+  scale_y_discrete(limits = rev) +
+  scale_fill_manual(values = c('#1f77b4', '#ff7f0e', '#279e68', '#d62728', '#aa40fc', '#8c564b',
+                               '#e377c2', '#b5bd61', '#17becf', '#aec7e8', '#ffbb78', '#98df8a',
+                               '#ff9896')) +
+  facet_wrap(~tissue) +
+  theme_classic(base_size = 20) +
+  ylab("Day") + xlab("cell fraction") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+
+```
+
+
+```{python figure_S2C}
+
+annot_info = pd.read_csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/supplemental_tables/cluster_annotations.csv")
+annot_info["cluster_number"] = [str(n) for n in annot_info["cluster_number"]]
+annot_dict = dict(zip(annot_info["cluster_number"], annot_info["annotation"]))
+
+filtered2_no_skin2.obs["annotation"] = [annot_dict[cl] for cl in filtered2_no_skin2.obs["new_clusters"]]
+sorted_clusts = sorted(set(filtered2_no_skin2.obs["annotation"]), key = lambda s: int(s.split(":")[0].replace("C", "")))
+
+# Append a "C" to the clusters as well
+filtered2_no_skin2.obs["new_clusters"] = [f"C{cl}" for cl in filtered2_no_skin2.obs["new_clusters"]]
+
+# Fix the percent mito
+raw_data = pg.read_input(os.path.join(file_path(), "data", "integrated", "all_data.h5ad"))
+
+pg.qc_metrics(raw_data, percent_mito = 20, mito_prefix = "mt-")
+mito_dict = dict(zip(raw_data.obs_names, raw_data.obs["percent_mito"]))
+filtered2_no_skin2.obs['percent_mito'] = [mito_dict[c] for c in filtered2_no_skin2.obs_names]
+
+meta = ['n_genes', 'percent_mito']
+violin_dat = filtered2_no_skin2.obs[["annotation", "percent_mito", "n_genes"]]
+
+fig, ax = plt.subplots(nrows=1, ncols=2)
+ax = ax.ravel()
+for num, m in enumerate(meta) :
+    sns.violinplot(y = "annotation", x = m, color = "grey",
+                   data = violin_dat, inner = None, scale = "width",
+                   ax = ax[num], cut = 0, order = sorted_clusts)
+    for violin in ax[num].collections:
+        violin.set_alpha(0.8)
+
+    if m == "n_genes" :
+        ax[num].set_xlabel("# genes")
+    else :
+        ax[num].set_xlabel("% mitochondrial UMIs")
+    if num > 0 :
+        ax[num].set_yticks([])
+    ax[num].set_ylabel("")
+figure = plt.gcf()
+figure.set_size_inches(8, 3)
+figure.tight_layout()
+figure
+
+
+```
+
