@@ -1,0 +1,493 @@
+Supplemental figure 7
+================
+
+``` r
+library(reticulate)
+library(gtools)
+library(tidyverse)
+library(ggplot2)
+library(DESeq2)
+library(glue)
+library(magrittr)
+library(ComplexHeatmap)
+library(circlize)
+library(gridExtra)
+library(ggrepel)
+library(ggpubr)
+
+use_python("/projects/home/nealpsmith/.conda/envs/old_peg_github/bin/python")
+```
+
+``` python
+import getpass
+import pegasus as pg
+```
+
+    ## WARNING:param.Parameterized: Use method 'warning' via param namespace 
+    ## WARNING:param.main: pandas could not register all extension types imports failed with the following error: cannot import name 'ABCIndexClass' from 'pandas.core.dtypes.generic' (/projects/home/nealpsmith/.conda/envs/old_peg_github/lib/python3.7/site-packages/pandas/core/dtypes/generic.py)
+
+``` python
+import scanpy as sc
+import os
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import anndata
+import math
+import seaborn as sns
+import matplotlib.colors as clr
+from pylab import cm
+import matplotlib as mpl
+from matplotlib.lines import Line2D
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from scipy.sparse import csr_matrix
+from collections import Counter
+import wot
+import pickle
+
+from cellrank.external.kernels import WOTKernel
+from cellrank.tl.kernels import ConnectivityKernel
+from cellrank.tl.estimators import GPCCA
+from mpl_toolkits.axes_grid1 import make_axes_locatable, Size
+import wot
+
+mpl.rcParams['axes.spines.right'] = False
+mpl.rcParams['axes.spines.top'] = False
+# mpl.rcParams['pdf.fonttype'] = 42
+
+# Set a colormap
+gene_colormap = clr.LinearSegmentedColormap.from_list('gene_cmap', ["#e0e0e1", '#4576b8', '#02024a'], N=200)
+
+cmap = cm.get_cmap('YlGnBu', 140)    # PiYG
+hex_list = []
+for i in range(cmap.N):
+    rgba = cmap(i)
+    # rgb2hex accepts rgb or rgba
+    hex_list.append(mpl.colors.rgb2hex(rgba))
+
+colors = [c for n, c in enumerate(hex_list) if n%10 == 0]
+colors = colors [1:13] # First one is too dim
+days = ["0", "3", "4", "5", "6", "7", "10", "14", "21", "32", "60", "90"]
+
+day_col_dict = dict(zip(days, colors))
+# Also make as a colormap
+kurd_day_cmap = clr.LinearSegmentedColormap.from_list('day_cmap', colors, N=len(colors))
+
+cmap = cm.get_cmap('YlOrRd', 110)    # PiYG
+hex_list = []
+for i in range(cmap.N):
+    rgba = cmap(i)
+    # rgb2hex accepts rgb or rgba
+    hex_list.append(mpl.colors.rgb2hex(rgba))
+
+colors = [c for n, c in enumerate(hex_list) if n%10 == 0]
+colors = colors [1:11] # First one is too dim
+days = ["0", "2", "5", "10", "15", "20", "25", "30", "45", "60"]
+
+day_col_dict = dict(zip(days, colors))
+kupper_day_cmap = clr.LinearSegmentedColormap.from_list('day_cmap', colors, N=len(colors))
+
+# Set a switcher up so the script will run on any computer
+def file_path(user = getpass.getuser()):
+    switcher = {
+            "nealp": "C:/Users/nealp/Documents/Dropbox (Partners HealthCare)/Chloe&Mazen/Collaborator_projects/Kupper_TRM/neal_analysis/",
+            "neal": "/home/neal/Documents/Dropbox (Partners HealthCare)/Chloe&Mazen/Collaborator_projects/Kupper_TRM/neal_analysis/",
+            "nealpsmith": "/projects/home/nealpsmith/projects/kupper/"
+
+    }
+    if switcher.get(user):
+        return(switcher.get(user))
+    else :
+        print("Add your local filepath to the switcher! run getpass.getuser() to get your ID")
+
+skin1_data = pg.read_input(os.path.join(file_path(), "all_data_analysis", "data", "integrated", "skin1_subcluster.h5ad"))
+```
+
+    ## 2023-08-17 15:11:45,204 - pegasus - INFO - Time spent on 'read_input' = 1.37s.
+
+``` python
+gut1_data = pg.read_input(os.path.join(file_path(), "kurd_paper", "data", "gut1_data_subcluster.h5ad"))
+```
+
+    ## 2023-08-17 15:11:48,144 - pegasus - INFO - Time spent on 'read_input' = 2.93s.
+
+``` python
+
+genes = ["Fos", "Fosb", "Fosl2", "Gem", "Junb", "Zfp36l1", "Nr4a2", "Nr4a1",
+         "Dennd4a", "Ifrd1", "Rel", "Nr4a3", "Egr1", "Dusp1"]
+
+ncols = int(round(np.sqrt(len(genes))))
+fig, ax = plt.subplots(ncols = ncols, nrows = ncols + 1, figsize = (10, 10))
+ax = ax.ravel()
+
+for num, gene in enumerate(genes) :
+    plot_df = pd.DataFrame(skin1_data[:,gene].X.toarray(), columns = [gene], index = skin1_data.obs_names)
+    plot_df["x"] = skin1_data.obsm["X_umap"][:, 0]
+    plot_df["y"] = skin1_data.obsm["X_umap"][:, 1]
+    hb = ax[num].hexbin(plot_df["x"], plot_df["y"], C=plot_df[gene], cmap=gene_colormap, gridsize=100, edgecolors = "none")
+    ax[num].get_xaxis().set_ticks([])
+    ax[num].get_yaxis().set_ticks([])
+    ax[num].spines['top'].set_visible(False)
+    ax[num].spines['right'].set_visible(False)
+    ax[num].set_title(gene, size = 25)
+    cb = fig.colorbar(hb, ax=ax[num], shrink=.75, aspect=10)
+
+for noplot in range(num + 1, len(ax)) :
+    ax[noplot].axis("off")
+```
+
+    ## (0.0, 1.0, 0.0, 1.0)
+    ## (0.0, 1.0, 0.0, 1.0)
+    ## (0.0, 1.0, 0.0, 1.0)
+    ## (0.0, 1.0, 0.0, 1.0)
+    ## (0.0, 1.0, 0.0, 1.0)
+    ## (0.0, 1.0, 0.0, 1.0)
+
+``` python
+fig.tight_layout()
+fig
+```
+
+<img src="supp_figure_6_files/figure-gfm/fig_S6A_skin-1.png" width="960" />
+
+``` python
+
+fig, ax = plt.subplots(ncols = ncols, nrows = ncols + 1, figsize = (10, 10))
+ax = ax.ravel()
+
+for num, gene in enumerate(genes) :
+    plot_df = pd.DataFrame(gut1_data[:,gene].X.toarray(), columns = [gene], index = gut1_data.obs_names)
+    plot_df["x"] = gut1_data.obsm["X_umap"][:, 0]
+    plot_df["y"] = gut1_data.obsm["X_umap"][:, 1]
+    hb = ax[num].hexbin(plot_df["x"], plot_df["y"], C=plot_df[gene], cmap=gene_colormap, gridsize=100, edgecolors = "none")
+    ax[num].get_xaxis().set_ticks([])
+    ax[num].get_yaxis().set_ticks([])
+    ax[num].spines['top'].set_visible(False)
+    ax[num].spines['right'].set_visible(False)
+    ax[num].set_title(gene, size = 25)
+    cb = fig.colorbar(hb, ax=ax[num], shrink=.75, aspect=10)
+
+for noplot in range(num + 1, len(ax)) :
+    ax[noplot].axis("off")
+```
+
+    ## (0.0, 1.0, 0.0, 1.0)
+    ## (0.0, 1.0, 0.0, 1.0)
+    ## (0.0, 1.0, 0.0, 1.0)
+    ## (0.0, 1.0, 0.0, 1.0)
+    ## (0.0, 1.0, 0.0, 1.0)
+    ## (0.0, 1.0, 0.0, 1.0)
+
+``` python
+fig.tight_layout()
+fig
+```
+
+<img src="supp_figure_6_files/figure-gfm/fig_S6A_gut-3.png" width="960" />
+
+``` r
+skin_gsea <- read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/pseudobulk/lin_modelling_subclusters/gene_sets/skin_1_KEGG|HALLMARK_gsets.csv",
+                      row.names = 1) %>%
+  dplyr::select(pathway, pval, padj, NES) %>%
+  `colnames<-`(c("pathway", "skin_pval", "skin_padj", "skin_NES"))
+gut_gsea <- read.csv("/projects/home/nealpsmith/projects/kupper/kurd_paper/data/pseudobulk/lin_modelling_subclusters/gene_sets/gut1_data_KEGG|HALLMARK_gsets.csv",
+                     row.names = 1) %>%
+  dplyr::select(pathway, pval, padj, NES) %>%
+  `colnames<-`(c("pathway", "gut_pval", "gut_padj", "gut_NES"))
+
+all_gsea_info <- skin_gsea %>%
+  dplyr::left_join(gut_gsea, by = "pathway")
+
+plot_df <- all_gsea_info %>%
+  dplyr::filter(grepl("HALLMARK", .$pathway))
+plot_df$pathway <- sapply(plot_df$pathway, function(x) sub("HALLMARK_", "", x))
+ggplot(plot_df, aes(x = skin_NES, y = gut_NES)) +
+  geom_point(data = plot_df[plot_df$gut_NES < 0 | plot_df$skin_NES < 0 |
+                                    plot_df$skin_padj < 0.1 | plot_df$gut_NES < 0,], color = "grey") +
+  geom_point(data = plot_df[plot_df$gut_padj < 0.1 & plot_df$skin_padj < 0.1 &
+                                    plot_df$gut_NES > 0 & plot_df$skin_NES > 0,], color = "red") +
+  geom_text_repel(data = plot_df[plot_df$gut_padj < 0.1 & plot_df$skin_padj < 0.1 &
+                                    plot_df$gut_NES > 0 & plot_df$skin_NES > 0,], aes(label = pathway), size = 5,
+                  min.segment.length = 0.1) +
+  xlab("Skin Normalized enrichment score") + ylab("siIEL normalized enrichment score") +
+  ggtitle("Hallmark Pathways") +
+  theme_classic(base_size = 20)
+```
+
+![](supp_figure_6_files/figure-gfm/fig_S6B-5.png)<!-- -->
+
+``` r
+plot_df <- all_gsea_info %>%
+  dplyr::filter(grepl("KEGG", .$pathway))
+plot_df$pathway <- sapply(plot_df$pathway, function(x) sub("KEGG_", "", x))
+ggplot(plot_df, aes(x = skin_NES, y = gut_NES)) +
+  geom_point(data = plot_df[plot_df$gut_NES < 0 | plot_df$skin_NES < 0 |
+                                    plot_df$skin_padj < 0.1 | plot_df$gut_NES < 0,], color = "grey") +
+  geom_point(data = plot_df[plot_df$gut_padj < 0.1 & plot_df$skin_padj < 0.1 &
+                                    plot_df$gut_NES > 0 & plot_df$skin_NES > 0,], color = "red") +
+  geom_text_repel(data = plot_df[plot_df$gut_padj < 0.1 & plot_df$skin_padj < 0.1 &
+                                    plot_df$gut_NES > 0 & plot_df$skin_NES > 0,], aes(label = pathway), size = 5,
+                  min.segment.length = 0.1) +
+  xlab("Skin Normalized enrichment score") + ylab("siIEL normalized enrichment score") +
+  ggtitle("KEGG Pathways") +
+  theme_classic(base_size = 20)
+```
+
+![](supp_figure_6_files/figure-gfm/fig_S6B-6.png)<!-- -->
+
+``` r
+gut1_aucell <- read.csv('/projects/home/nealpsmith/projects/kupper/pyscenic/res/gut1/gut1.auc_with_timepoint.csv', row.names = 1)
+colnames(gut1_aucell) <- sapply(colnames(gut1_aucell), function(x) sub("...", "", x, fixed = TRUE))
+gut1_aucell$day <- paste("d", gut1_aucell$day, sep = "")
+gut_day_int <- list("d4" = 0, "d7" = 1, "d10" = 2, "d14" = 3, "d21" = 4, "d32" = 5, "d60" = 6, "d90" = 7)
+
+# Filter to just regulons that meet criteria
+gut1_regulon_genes <-read.csv("/projects/home/nealpsmith/projects/kupper/kurd_paper/data/pyscenic/gut1/gut1_regulon_genes.csv",
+                            row.names = 1)
+gut_keep <- intersect(colnames(gut1_regulon_genes), colnames(gut1_aucell))
+gut1_aucell <- gut1_aucell[,c(gut_keep, "day")]
+
+gut1_aucell$day_int <- sapply(gut1_aucell$day, function(x) gut_day_int[[x]])
+
+mean_auc <- gut1_aucell %>%
+  reshape2::melt(id.vars = c("day", "day_int")) %>%
+  group_by(day, day_int, variable) %>%
+  summarise(mean_aucell = mean(value))
+
+plot_df <- mean_auc[mean_auc$variable == "Jund",]
+plot_df$day <- factor(plot_df$day)
+
+mean_auc <- mean_auc %>%
+  dplyr::mutate(day_real = as.numeric(sub("d", "", day)))
+
+# Use lienar model to calculate p-values
+lm_gut <- lapply(unique(mean_auc$variable), function(reg){
+  reg_df <- mean_auc %>%
+    dplyr::filter(variable == reg)
+  lin_model <- summary(lm(mean_aucell ~ day_int, data = reg_df))
+  stat_info <- data.frame(regulon = reg,
+                          gut_r_squared = lin_model$r.squared,
+                          gut_p_val = as.numeric(lin_model$coefficients[,4][2]),
+                          gut_slope = as.numeric(lin_model$coefficients[,1][2]))
+
+
+  return(stat_info)
+}) %>%
+  do.call(rbind, .)
+
+lm_gut$gut_adj_pval <- p.adjust(lm_gut$gut_p_val, method = "fdr")
+
+skin1_aucell <- read.csv('/projects/home/nealpsmith/projects/kupper/pyscenic/res/skin1/skin1.auc_with_timepoint.csv', row.names = 1)
+colnames(skin1_aucell) <- sapply(colnames(skin1_aucell), function(x) sub("...", "", x, fixed = TRUE))
+skin1_aucell$day <- paste("d", skin1_aucell$day, sep = "")
+skin_day_int <- list("d5" = 0, "d10" = 1, "d15" = 2, "d20" = 3, "d25" = 4, "d30" = 5, "d45" = 6, "d60" = 7)
+
+skin1_regulon_genes <- read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/pyscenic/skin1/skin1_regulon_genes.csv",
+                            row.names = 1)
+skin_keep <- intersect(colnames(skin1_regulon_genes), colnames(skin1_aucell))
+skin1_aucell <- skin1_aucell[,c(skin_keep, "day")]
+
+skin1_aucell$day_int <- sapply(skin1_aucell$day, function(x) skin_day_int[[x]])
+
+mean_auc <- skin1_aucell %>%
+  reshape2::melt(id.vars = c("day", "day_int")) %>%
+  group_by(day, day_int, variable) %>%
+  summarise(mean_aucell = mean(value))
+
+# Use lienar model to calculate p-values
+lm_skin <- lapply(unique(mean_auc$variable), function(reg){
+  reg_df <- mean_auc %>%
+    dplyr::filter(variable == reg)
+  lin_model <- summary(lm(mean_aucell ~ day_int, data = reg_df))
+  stat_info <- data.frame(regulon = reg,
+                          skin_r_squared = lin_model$r.squared,
+                          skin_p_val = as.numeric(lin_model$coefficients[,4][2]),
+                          skin_slope = as.numeric(lin_model$coefficients[,1][2]))
+  return(stat_info)
+}) %>%
+  do.call(rbind, .)
+
+lm_skin$skin_adj_pval <- p.adjust(lm_skin$skin_p_val, method = "fdr")
+
+
+skin_sig <- lm_skin[lm_skin$skin_adj_pval < 0.1 & lm_skin$skin_slope > 0,]
+gut_sig <- lm_gut[lm_gut$gut_adj_pval < 0.1 & lm_gut$gut_slope > 0,]
+overlap <- intersect(as.character(skin_sig$regulon), as.character(gut_sig$regulon))
+skin_sig_unique <- skin_sig$regulon[!skin_sig$regulon %in% overlap]
+gut_sig_unique <- gut_sig$regulon[!gut_sig$regulon %in% overlap]
+
+plot_df <- lm_skin %>%
+  dplyr::left_join(lm_gut)
+plot_df$regulon <- gsub("reg_", "", plot_df$regulon)
+
+ggplot(plot_df, aes(x = skin_slope, y = gut_slope)) +
+  geom_point(data = plot_df[plot_df$gut_adj_pval > 0.1 | plot_df$skin_adj_pval > 0.1,], color = "grey", size = 2) +
+  geom_point(data = plot_df[plot_df$gut_adj_pval < 0.1 &
+                              plot_df$skin_adj_pval < 0.1 & plot_df$skin_slope > 0 &
+                              plot_df$gut_slope > 0,], pch = 21, fill = "red", size = 3) +
+  geom_vline(xintercept = 0) +
+  geom_hline(yintercept = 0) +
+  xlab("Skin regression slope") +
+  ylab("Gut regression slope") +
+  geom_text_repel(data = plot_df[plot_df$gut_adj_pval < 0.1 & plot_df$skin_adj_pval < 0.1,], aes(label = regulon), size = 8) +
+  theme_classic(base_size = 20)
+```
+
+![](supp_figure_6_files/figure-gfm/fig_S6C-1.png)<!-- -->
+
+``` r
+day_colors = c('skin_D0'= '#fff2ac',
+               'skin_D2'= '#ffe48c',
+               'skin_D5'= '#fed16e',
+               'skin_D10'= '#feb54f',
+               'skin_D15'= '#fd9941',
+               'skin_D20'= '#fd7435',
+               'skin_D25'= '#f94728',
+               'skin_D30'= '#e6211e',
+               'skin_D45'= '#cc0a22',
+               'skin_D60'= '#a80026',
+               'siIEL_D0'= '#f5fbc2',
+               'siIEL_D3'= '#e7f6b1',
+               'siIEL_D4'= '#d1edb3',
+               'siIEL_D5'= '#b1e1b6',
+               'siIEL_D6'= '#88d0ba',
+               'siIEL_D7'= '#63c3bf',
+               'siIEL_D10'= '#40b5c4',
+               'siIEL_D14'= '#2ba0c2',
+               'siIEL_D21'= '#1e88bc',
+               'siIEL_D32'= '#216aae',
+               'siIEL_D60'= '#2350a1',
+               'siIEL_D90'= '#253896')
+count_data <- read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/skin1_subcluster_pseudobulk_on_time_counts.csv",
+                       row.names = 1)
+
+count_data <- count_data %>%
+  dplyr::select(-c("samp_19_D30_Skin_30"))
+
+# Now need to log-norm
+norm_res_kupper <- apply(count_data, 2, function(c){
+  n_total <- sum(c)
+  per_100k <- (c * 1000000) / n_total
+  return(per_100k)
+})
+
+norm_res_kupper <- log1p(norm_res_kupper)
+
+# Can we change the column names to just be timepoints?
+colnames(norm_res_kupper) <- sapply(colnames(norm_res_kupper), function(x) strsplit(x, "_")[[1]][3])
+
+
+# Now need to make the Kurd one
+count_data <- read.csv("/projects/home/nealpsmith/projects/kupper/kurd_paper/data/gut1_data_subcluster_pseudobulk_on_time_counts.csv",
+                       row.names = 1)
+
+# Now need to log-norm
+norm_res_kurd <- apply(count_data, 2, function(c){
+  n_total <- sum(c)
+  per_100k <- (c * 1000000) / n_total
+  return(per_100k)
+})
+
+norm_res_kurd <- log1p(norm_res_kurd)
+
+# Get the average of the repeated timepoints
+colname_to_tmpt <- lapply(colnames(norm_res_kurd), function(x) paste("D", tail(strsplit(x, "_")[[1]], n = 1), sep = ""))
+tmpts <- unique(sapply(colnames(norm_res_kurd), function(x) tail(strsplit(x, "_")[[1]], n = 1)))
+
+norm_res_kurd <- lapply(tmpts, function(tpt){
+  cols = as.data.frame(norm_res_kurd[,grepl(glue("*_{tpt}$"), colnames(norm_res_kurd))])
+  if(ncol(cols) > 1){
+   mean = rowMeans(cols) %>%
+    as.data.frame() %>%
+    `colnames<-`(glue("D{tpt}")) %>%
+     rownames_to_column("gene")
+  return(mean)
+  } else {
+    cols <- cols %>%
+      `colnames<-`(glue("D{tpt}")) %>%
+     rownames_to_column("gene")
+    return(cols)
+  }
+}) %>%
+  purrr::reduce(left_join, by = "gene") %>%
+  column_to_rownames("gene")
+
+plot_info_kurd <- norm_res_kurd[c("Tbx21"),] %>%
+    t() %>%
+    as.data.frame() %>%
+    rownames_to_column(var = "tmpt") %>%
+    mutate(tmpt_tissue = paste("siIEL", tmpt, sep = "_"))
+
+plot_info_kurd$tmpt_tissue <- factor(plot_info_kurd$tmpt_tissue, levels = names(day_colors))
+
+plot_info_kupper <- norm_res_kupper[c("Tbx21"),] %>%
+  as.data.frame() %>%
+  `colnames<-`(c("Tbx21")) %>%
+  rownames_to_column(var = "tmpt") %>%
+  mutate(tmpt_tissue = paste("skin", tmpt, sep = "_"))
+
+plot_info_kupper$tmpt_tissue <- factor(plot_info_kupper$tmpt_tissue, levels = names(day_colors))
+
+all_plot_info <- rbind(plot_info_kurd, plot_info_kupper)
+all_plot_info$tissue <- sapply(as.character(all_plot_info$tmpt_tissue), function(x) strsplit(x, "_")[[1]][1])
+all_plot_info$day <- sapply(as.character(all_plot_info$tmpt_tissue), function(x) as.numeric(sub("D", "", strsplit(x, "_")[[1]][2])))
+all_plot_info$day <- factor(all_plot_info$day)
+
+ggplot(all_plot_info, aes(x = day, y = Tbx21, fill = tmpt_tissue, group = tissue)) +
+  geom_line() +
+  geom_point(pch = 21, size = 3) +
+  scale_fill_manual(values = day_colors) +
+  ylab("logCPM(Tbx21)") +
+  # scale_y_continuous(limits = c(3, 6)) +
+  theme_classic(base_size = 20)
+```
+
+![](supp_figure_6_files/figure-gfm/fig_S6D-1.png)<!-- -->
+
+``` r
+plot_list <- list()
+for (gene_oi in c("Fos", "Fosl2", "Fosb", "Junb")){
+  plot_info_kurd <- norm_res_kurd[c("Tbx21", gene_oi),] %>%
+    t() %>%
+    as.data.frame() %>%
+    rownames_to_column(var = "tmpt") %>%
+    mutate(tmpt_tissue = paste("siIEL", tmpt, sep = "_"))
+
+  plot_info_kurd$tmpt_tissue <- factor(plot_info_kurd$tmpt_tissue, levels = names(day_colors))
+
+  plot_info_kupper <- norm_res_kupper[c("Tbx21", gene_oi),] %>%
+    t() %>%
+    as.data.frame() %>%
+    # `colnames<-`(c("Tbx21")) %>%
+    rownames_to_column(var = "tmpt") %>%
+    mutate(tmpt_tissue = paste("skin", tmpt, sep = "_"))
+
+  plot_info_kupper$tmpt_tissue <- factor(plot_info_kupper$tmpt_tissue, levels = names(day_colors))
+
+  all_plot_info <- rbind(plot_info_kurd, plot_info_kupper)
+  all_plot_info$tissue <- sapply(as.character(all_plot_info$tmpt_tissue), function(x) strsplit(x, "_")[[1]][1])
+  all_plot_info$day <- sapply(as.character(all_plot_info$tmpt_tissue), function(x) as.numeric(sub("D", "", strsplit(x, "_")[[1]][2])))
+  all_plot_info$day <- factor(all_plot_info$day)
+  cor_res <- cor.test(all_plot_info[[gene_oi]], all_plot_info$Tbx21,  method = "pearson")
+  r = round(cor_res$estimate, 2)
+  pval <- round(cor_res$p.value, 4)
+
+  p <- ggplot(all_plot_info, aes_string(x = gene_oi, y = "Tbx21", fill = "tmpt_tissue", group = "tissue")) +
+    # geom_line() +
+    geom_point(pch = 21, size = 6) +
+    scale_fill_manual(values = day_colors) +
+    xlab(glue("logCPM({gene_oi})")) +
+    ylab("logCPM(Tbx21)") +
+    annotate(geom = "text", x =  min(all_plot_info[[gene_oi]]), y = 5,
+             label = glue("r : {r}"), size = 7, hjust= 0) +
+    annotate(geom = "text", x =  min(all_plot_info[[gene_oi]]), y = 4.8,
+             label = glue("p-value : {pval}"), size = 7, hjust = 0) +
+    theme_classic(base_size = 20) +
+    theme(legend.title = element_blank())
+  plot_list <- c(plot_list, list(p))
+}
+
+ggarrange(plotlist = plot_list, nrow = 2, ncol = 2, common.legend = TRUE)
+```
+
+![](supp_figure_6_files/figure-gfm/fig_S6E-1.png)<!-- -->
