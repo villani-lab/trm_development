@@ -222,13 +222,13 @@ gene_colormap = clr.LinearSegmentedColormap.from_list('gene_cmap', ["#d3d3d3", '
 gut1_data = pg.read_input(os.path.join(file_path(), "kurd_paper", "data", "gut1_data_subcluster.h5ad"))
 ```
 
-    ## 2023-09-27 15:04:04,811 - pegasus - INFO - Time spent on 'read_input' = 2.93s.
+    ## 2023-09-27 18:28:59,081 - pegasus - INFO - Time spent on 'read_input' = 2.95s.
 
 ``` python
 skin1_data = pg.read_input(os.path.join(file_path(), "all_data_analysis", "data", "integrated", "skin1_subcluster.h5ad"))
 ```
 
-    ## 2023-09-27 15:04:06,166 - pegasus - INFO - Time spent on 'read_input' = 1.35s.
+    ## 2023-09-27 18:29:00,445 - pegasus - INFO - Time spent on 'read_input' = 1.36s.
 
 ``` python
 skin1_data.obs["day"] = [int(d) for d in skin1_data.obs["day"]]
@@ -239,21 +239,48 @@ day_cmaps = {"skin": kupper_day_cmap, "siIEL" : kurd_day_cmap}
 ``` python
 
 ## Look at biological categories of genes ###
+# The human hypoxia signature from mSigDB
+hypoxia_human = ["ACKR3", "ADM", "ADORA2B", "AK4", "AKAP12", "ALDOA", "ALDOB", "ALDOC", "AMPD3", "ANGPTL4",
+                 "ANKZF1", "ANXA2", "ATF3", "ATP7A", "B3GALT6", "B4GALNT2", "BCAN", "BCL2", "BGN", "BHLHE40",
+                 "BNIP3L", "BRS3", "BTG1", "CA12", "CASP6", "CAV1", "CAVIN1", "CAVIN3", "CCN1", "CCN2", "CCN5",
+                 "CCNG2", "CDKN1A", "CDKN1B", "CDKN1C", "CHST2", "CHST3", "CITED2", "COL5A1", "CP", "CSRP2",
+                 "CXCR4", "DCN", "DDIT3", "DDIT4", "DPYSL4", "DTNA", "DUSP1", "EDN2", "EFNA1", "EFNA3", "EGFR",
+                 "ENO1", "ENO2", "ENO3", "ERO1A", "ERRFI1", "ETS1", "EXT1", "F3", "FAM162A", "FBP1", "FOS",
+                 "FOSL2", "FOXO3", "GAA", "GALK1", "GAPDH", "GAPDHS", "GBE1", "GCK", "GCNT2", "GLRX", "GPC1",
+                 "GPC3", "GPC4", "GPI", "GRHPR", "GYS1", "HAS1", "HDLBP", "HEXA", "HK1", "HK2", "HMOX1",
+                 "HOXB9", "HS3ST1", "HSPA5", "IDS", "IER3", "IGFBP1", "IGFBP3", "IL6", "ILVBL", "INHA", "IRS2",
+                 "ISG20", "JMJD6", "JUN", "KDELR3", "KDM3A", "KIF5A", "KLF6", "KLF7", "KLHL24", "LALBA", "LARGE1",
+                 "LDHA", "LDHC", "LOX", "LXN", "MAFF", "MAP3K1", "MIF", "MT1E", "MT2A", "MXI1", "MYH9", "NAGK", "NCAN",
+                 "NDRG1", "NDST1", "NDST2", "NEDD4L", "NFIL3", "NOCT", "NR3C1", "P4HA1", "P4HA2", "PAM", "PCK1",
+                 "PDGFB", "PDK1", "PDK3", "PFKFB3", "PFKL", "PFKP", "PGAM2", "PGF", "PGK1", "PGM1", "PGM2", "PHKG1",
+                 "PIM1", "PKLR", "PKP1", "PLAC8", "PLAUR", "PLIN2", "PNRC1", "PPARGC1A", "PPFIA4", "PPP1R15A",
+                 "PPP1R3C", "PRDX5", "PRKCA", "PYGM", "RBPJ", "RORA", "RRAGD", "S100A4", "SAP30", "SCARB1", "SDC2",
+                 "SDC3", "SDC4", "SELENBP1", "SERPINE1", "SIAH2", "SLC25A1", "SLC2A1", "SLC2A3", "SLC2A5", "SLC37A4",
+                 "SLC6A6", "SRPX", "STBD1", "STC1", "STC2", "SULT2B1", "TES", "TGFB3", "TGFBI", "TGM2", "TIPARP",
+                 "TKTL1", "TMEM45A", "TNFAIP3", "TPBG", "TPD52", "TPI1", "TPST2", "UGP2", "VEGFA", "VHL", "VLDLR",
+                 "WSB1", "XPNPEP1", "ZFP36", "ZNF292"]
+
+mouse_to_human = pd.read_csv("/projects/home/nealpsmith/data/useful/human_to_mouse_genes.csv")
+filt = mouse_to_human[mouse_to_human["HGNC.symbol"].isin(hypoxia_human)]
+mouse_hypoxia = list(filt["MGI.symbol"])
+
+
 gene_cats = {"immediate_early_genes" : ["Fos", "Fosb", "Fosl2", "Gem", "Junb", "Zfp36l1", "Nr4a2", "Nr4a1",
                                                   "Dennd4a", "Ifrd1", "Rel", "Nr4a3", "Egr1", "Dusp1"],
-             "hypoxia" : ["Tiparp","Cdkn1a","Ppp1r15a","Errfi1","Zfp36","Tnfaip3",
-                          "Dusp1","Klf6","Rora"]}
+             "hypoxia" : mouse_hypoxia}
 
 pg.calc_signature_score(gut1_data, signatures=gene_cats, n_bins = 2)
 ```
 
-    ## 2023-09-27 15:04:09,268 - pegasus - INFO - Time spent on 'calc_signature_score' = 0.71s.
+    ## 2023-09-27 18:29:03,544 - pegasus - WARNING - For signature hypoxia, genes 'Dtna', 'Selenbp2', 'Cav1', 'Ppp1r3c', 'Tmem45a', 'Brs3', 'Lox', 'Ccn1', 'Has1', 'Ero1a', 'Ackr3', 'Tesl1', 'Tesl2', 'Srpx', 'Ccn2', 'Ccn5', 'Igfbp1' are not in the data and thus omitted!
+    ## 2023-09-27 18:29:03,698 - pegasus - INFO - Time spent on 'calc_signature_score' = 0.77s.
 
 ``` python
 pg.calc_signature_score(skin1_data, signatures=gene_cats, n_bins = 2)
 ```
 
-    ## 2023-09-27 15:04:09,580 - pegasus - INFO - Time spent on 'calc_signature_score' = 0.31s.
+    ## 2023-09-27 18:29:03,956 - pegasus - WARNING - For signature hypoxia, genes 'Brs3', 'Ccn1', 'Ero1a', 'Tesl1', 'Tesl2', 'Ccn2', 'Pklr', 'Ccn5', 'Igfbp1' are not in the data and thus omitted!
+    ## 2023-09-27 18:29:04,021 - pegasus - INFO - Time spent on 'calc_signature_score' = 0.32s.
 
 ``` python
 data_dict = {"skin" : skin1_data, "siIEL" : gut1_data}
