@@ -415,54 +415,6 @@ ggplot(all_plot_info, aes(x = day, y = Tbx21, fill = tmpt_tissue, group = tissue
 ```
 
 
-```{r fig_S6E, message = FALSE, warning = FALSE, fig.height = 10, fig.width = 10}
-
-plot_list <- list()
-for (gene_oi in c("Fos", "Fosl2", "Fosb", "Junb")){
-  plot_info_kurd <- norm_res_kurd[c("Tbx21", gene_oi),] %>%
-    t() %>%
-    as.data.frame() %>%
-    rownames_to_column(var = "tmpt") %>%
-    mutate(tmpt_tissue = paste("siIEL", tmpt, sep = "_"))
-
-  plot_info_kurd$tmpt_tissue <- factor(plot_info_kurd$tmpt_tissue, levels = names(day_colors))
-
-  plot_info_kupper <- norm_res_kupper[c("Tbx21", gene_oi),] %>%
-    t() %>%
-    as.data.frame() %>%
-    # `colnames<-`(c("Tbx21")) %>%
-    rownames_to_column(var = "tmpt") %>%
-    mutate(tmpt_tissue = paste("skin", tmpt, sep = "_"))
-
-  plot_info_kupper$tmpt_tissue <- factor(plot_info_kupper$tmpt_tissue, levels = names(day_colors))
-
-  all_plot_info <- rbind(plot_info_kurd, plot_info_kupper)
-  all_plot_info$tissue <- sapply(as.character(all_plot_info$tmpt_tissue), function(x) strsplit(x, "_")[[1]][1])
-  all_plot_info$day <- sapply(as.character(all_plot_info$tmpt_tissue), function(x) as.numeric(sub("D", "", strsplit(x, "_")[[1]][2])))
-  all_plot_info$day <- factor(all_plot_info$day)
-  cor_res <- cor.test(all_plot_info[[gene_oi]], all_plot_info$Tbx21,  method = "pearson")
-  r = round(cor_res$estimate, 2)
-  pval <- round(cor_res$p.value, 4)
-
-  p <- ggplot(all_plot_info, aes_string(x = gene_oi, y = "Tbx21", fill = "tmpt_tissue", group = "tissue")) +
-    # geom_line() +
-    geom_point(pch = 21, size = 6) +
-    scale_fill_manual(values = day_colors) +
-    xlab(glue("logCPM({gene_oi})")) +
-    ylab("logCPM(Tbx21)") +
-    annotate(geom = "text", x =  min(all_plot_info[[gene_oi]]), y = 5,
-             label = glue("r : {r}"), size = 7, hjust= 0) +
-    annotate(geom = "text", x =  min(all_plot_info[[gene_oi]]), y = 4.8,
-             label = glue("p-value : {pval}"), size = 7, hjust = 0) +
-    theme_classic(base_size = 20) +
-    theme(legend.title = element_blank())
-  plot_list <- c(plot_list, list(p))
-}
-
-ggarrange(plotlist = plot_list, nrow = 2, ncol = 2, common.legend = TRUE)
-
-```
-
 
 
 ```{r fig_3E, warning = FALSE, message = FALSE}
