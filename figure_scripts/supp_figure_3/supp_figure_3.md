@@ -89,7 +89,7 @@ filtered2_no_skin2 = pg.read_input(
     os.path.join(file_path(), "data", "integrated", "filtered2_no_skin2_harmonized_with_subclust.h5ad"))
 ```
 
-    ## 2023-08-15 19:17:22,606 - pegasus - INFO - Time spent on 'read_input' = 5.10s.
+    ## 2023-09-27 15:52:53,243 - pegasus - INFO - Time spent on 'read_input' = 5.03s.
 
 ``` python
 
@@ -125,57 +125,6 @@ fig
 
 ``` python
 
-gs = wot.io.read_sets(os.path.join(file_path(), "data", "gene_sets", "gene_sets.gmt"), filtered2_no_skin2.var.index.values)
-
-gene_set_scores_df = pd.DataFrame(index=filtered2_no_skin2.obs.index)
-
-for j in range(gs.shape[1]):
-    gene_set_name = str(gs.var.index.values[j])
-    result = wot.score_gene_sets(ds=filtered2_no_skin2, gs=gs[:, [j]], permutations=0, method='mean_z_score')
-    filtered2_no_skin2.obs[gene_set_name] = result["score"]
-    gene_set_scores_df[gene_set_name] = result['score']
-
-# apply logistic function to transform to birth rate and death rate
-def logistic(x, L, k, x0=0):
-    f = L / (1 + np.exp(-k * (x - x0)))
-    return f
-def gen_logistic(p, beta_max, beta_min, pmax, pmin, center, width):
-    return beta_min + logistic(p, L=beta_max - beta_min, k=4 / width, x0=center)
-
-def beta(p, beta_max=1.7, beta_min=0.3, pmax=1.0, pmin=-0.5, center=0.25):
-    return gen_logistic(p, beta_max, beta_min, pmax, pmin, center, width=0.5)
-
-def delta(a, delta_max=1.7, delta_min=0.3, amax=0.5, amin=-0.4, center=0.1):
-    return gen_logistic(a, delta_max, delta_min, amax, amin, center,
-                          width=0.2)
-
-birth = beta(filtered2_no_skin2.obs["CELL_CYCLE_PHASE"])
-death = delta(filtered2_no_skin2.obs["HALLMARK_APOPTOSIS"])
-
-gr = np.exp(birth-death)
-filtered2_no_skin2.obs["cell_growth_rate"] = gr
-
-# Plot growth rate distribution by day
-legend_elements = [Line2D([0], [0], color=day_col_dict[d], label=d,
-                          markerfacecolor=day_col_dict[d], lw=2) for d in
-                   sorted(set(filtered2_no_skin2.obs["day"]), key=int)]
-
-fig, ax = plt.subplots(1, figsize = (6, 6))
-for day in sorted(set(filtered2_no_skin2.obs["day"]), key = int) :
-    color = day_col_dict[day]
-    data = filtered2_no_skin2.obs["cell_growth_rate"][filtered2_no_skin2.obs["day"] == day]
-    data = [np.log(val) for val in data]
-    sns.distplot(data, hist = False, color = color, ax = ax)
-lgd = ax.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(0.85, 0.5), frameon=False, labelspacing = 0.1)
-plt.xlabel("log growth-rate")
-plt.title("growth rates by day")
-fig
-```
-
-<img src="supp_figure_3_files/figure-gfm/fig_S3B-3.png" width="576" />
-
-``` python
-
 cl_8_9_10 = filtered2_no_skin2[filtered2_no_skin2.obs["new_clusters"].isin(["8", "9", "10"])]
 
 genes = ["Ccl5", "Ifit1", "Isg20", "Btg1", "Hcst", "Sell"]
@@ -200,7 +149,7 @@ fig.tight_layout()
 fig
 ```
 
-<img src="supp_figure_3_files/figure-gfm/fig_S3C_cl8-5.png" width="672" />
+<img src="supp_figure_3_files/figure-gfm/fig_S3C_cl8-3.png" width="672" />
 
 ``` python
 
@@ -226,7 +175,7 @@ fig.tight_layout()
 fig
 ```
 
-<img src="supp_figure_3_files/figure-gfm/fig_S3C_cl9-7.png" width="672" />
+<img src="supp_figure_3_files/figure-gfm/fig_S3C_cl9-5.png" width="672" />
 
 ``` python
 
@@ -252,4 +201,4 @@ fig.tight_layout()
 fig
 ```
 
-<img src="supp_figure_3_files/figure-gfm/fig_S3C_cl10-9.png" width="672" />
+<img src="supp_figure_3_files/figure-gfm/fig_S3C_cl10-7.png" width="672" />
