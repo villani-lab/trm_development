@@ -6,10 +6,9 @@ library(reticulate)
 library(gtools)
 library(tidyverse)
 library(ggplot2)
-library(DESeq2)
+library(ggrepel)
 library(glue)
 library(magrittr)
-library(biomaRt)
 library(fgsea)
 library(ggpubr)
 
@@ -87,7 +86,7 @@ filtered2_no_skin2 = pg.read_input(
     os.path.join(file_path(), "data", "integrated", "filtered2_no_skin2_harmonized_with_subclust.h5ad"))
 ```
 
-    ## 2023-08-15 20:52:20,621 - pegasus - INFO - Time spent on 'read_input' = 5.04s.
+    ## 2023-09-27 16:05:03,966 - pegasus - INFO - Time spent on 'read_input' = 5.04s.
 
 ``` r
 # Read in the linear modeling results, scrip for this is in fig 3 script
@@ -316,3 +315,41 @@ ggarrange(plotlist = plot_list, ncol = 1)
 ```
 
 ![](supp_figure_4_files/figure-gfm/fig_S4B-1.png)<!-- -->
+
+``` r
+plot_df <- all_gsea_info %>%
+  dplyr::filter(grepl("HALLMARK", .$pathway))
+plot_df$pathway <- sapply(plot_df$pathway, function(x) sub("HALLMARK_", "", x))
+ggplot(plot_df, aes(x = skin_NES, y = gut_NES)) +
+  geom_point(data = plot_df[plot_df$gut_NES < 0 | plot_df$skin_NES < 0 |
+                                    plot_df$skin_padj < 0.1 | plot_df$gut_NES < 0,], color = "grey") +
+  geom_point(data = plot_df[plot_df$gut_padj < 0.1 & plot_df$skin_padj < 0.1 &
+                                    plot_df$gut_NES > 0 & plot_df$skin_NES > 0,], color = "red") +
+  geom_text_repel(data = plot_df[plot_df$gut_padj < 0.1 & plot_df$skin_padj < 0.1 &
+                                    plot_df$gut_NES > 0 & plot_df$skin_NES > 0,], aes(label = pathway), size = 5,
+                  min.segment.length = 0.1) +
+  xlab("Skin Normalized enrichment score") + ylab("siIEL normalized enrichment score") +
+  ggtitle("Hallmark Pathways") +
+  theme_classic(base_size = 20)
+```
+
+![](supp_figure_4_files/figure-gfm/fig_S4C-1.png)<!-- -->
+
+``` r
+plot_df <- all_gsea_info %>%
+  dplyr::filter(grepl("KEGG", .$pathway))
+plot_df$pathway <- sapply(plot_df$pathway, function(x) sub("KEGG_", "", x))
+ggplot(plot_df, aes(x = skin_NES, y = gut_NES)) +
+  geom_point(data = plot_df[plot_df$gut_NES < 0 | plot_df$skin_NES < 0 |
+                                    plot_df$skin_padj < 0.1 | plot_df$gut_NES < 0,], color = "grey") +
+  geom_point(data = plot_df[plot_df$gut_padj < 0.1 & plot_df$skin_padj < 0.1 &
+                                    plot_df$gut_NES > 0 & plot_df$skin_NES > 0,], color = "red") +
+  geom_text_repel(data = plot_df[plot_df$gut_padj < 0.1 & plot_df$skin_padj < 0.1 &
+                                    plot_df$gut_NES > 0 & plot_df$skin_NES > 0,], aes(label = pathway), size = 5,
+                  min.segment.length = 0.1) +
+  xlab("Skin Normalized enrichment score") + ylab("siIEL normalized enrichment score") +
+  ggtitle("KEGG Pathways") +
+  theme_classic(base_size = 20)
+```
+
+![](supp_figure_4_files/figure-gfm/fig_S4C-2.png)<!-- -->
