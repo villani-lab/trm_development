@@ -16,6 +16,27 @@ library(ComplexHeatmap)
 library(circlize)
 library(ggpubr)
 library(ggrepel)
+library(UpSetR)
+library(affy)
+library(mogene10sttranscriptcluster.db)
+
+godsnot_102 = c(
+  # "#FFFF00", Yellow isn't great
+  #"#1CE6FF", # This one is kinda ugly too
+  "#FF34FF", "#FF4A46", "#008941", "#006FA6", "#A30059",
+  "#FFDBE5", "#7A4900", "#0000A6", "#63FFAC", "#B79762", "#004D43", "#8FB0FF", "#997D87",
+  "#5A0007", "#809693", "#6A3A4C", "#1B4400", "#4FC601", "#3B5DFF", "#4A3B53", "#FF2F80",
+  "#61615A", "#BA0900", "#6B7900", "#00C2A0", "#FFAA92", "#FF90C9", "#B903AA", "#D16100",
+  "#DDEFFF", "#000035", "#7B4F4B", "#A1C299", "#300018", "#0AA6D8", "#013349", "#00846F",
+  "#372101", "#FFB500", "#C2FFED", "#A079BF", "#CC0744", "#C0B9B2", "#C2FF99", "#001E09",
+  "#00489C", "#6F0062", "#0CBD66", "#EEC3FF", "#456D75", "#B77B68", "#7A87A1", "#788D66",
+  "#885578", "#FAD09F", "#FF8A9A", "#D157A0", "#BEC459", "#456648", "#0086ED", "#886F4C",
+  "#34362D", "#B4A8BD", "#00A6AA", "#452C2C", "#636375", "#A3C8C9", "#FF913F", "#938A81",
+  "#575329", "#00FECF", "#B05B6F", "#8CD0FF", "#3B9700", "#04F757", "#C8A1A1", "#1E6E00",
+  "#7900D7", "#A77500", "#6367A9", "#A05837", "#6B002C", "#772600", "#D790FF", "#9B9700",
+  "#549E79", "#FFF69F", "#201625", "#72418F", "#BC23FF", "#99ADC0", "#3A2465", "#922329",
+  "#5B4534", "#FDE8DC", "#404E55", "#0089A3", "#CB7E98", "#A4E804", "#324E72"
+)
 
 use_python("/projects/home/nealpsmith/.conda/envs/old_peg_github/bin/python")
 ```
@@ -159,6 +180,83 @@ fig
 
 ```
 
+```{python fig_3A_genes_skin}
+
+gene_cats = {"eff_mem_genes" : ["Gzma", "Itgae"]}
+x_loc = np.min(skin1_data.obsm["X_umap"][:,0]) - np.min(skin1_data.obsm["X_umap"][:,0]) * 0.01
+y_loc = np.min(skin1_data.obsm["X_umap"][:,1]) - 0.4
+
+for name, genes in gene_cats.items() :
+    fig, ax = plt.subplots(ncols = 2, nrows = 1, figsize = (7.5, 2.8))
+    ax = ax.ravel()
+
+    for num, gene in enumerate(genes) :
+        # Calculate n cells and percent
+        n_cells = skin1_data[:, gene].X.count_nonzero()
+        perc_cells = n_cells / len(skin1_data) * 100
+        perc_cells = round(perc_cells, 2)
+
+        plot_df = pd.DataFrame(skin1_data[:,gene].X.toarray(), columns = [gene], index = skin1_data.obs_names)
+        plot_df["x"] = skin1_data.obsm["X_umap"][:, 0]
+        plot_df["y"] = skin1_data.obsm["X_umap"][:, 1]
+        hb = ax[num].hexbin(plot_df["x"], plot_df["y"], C=plot_df[gene], cmap=gene_colormap, gridsize=100, edgecolors = "none")
+        ax[num].get_xaxis().set_ticks([])
+        ax[num].get_yaxis().set_ticks([])
+        ax[num].spines['top'].set_visible(False)
+        ax[num].spines['right'].set_visible(False)
+        ax[num].set_title(gene, size = 25)
+        ax[num].text(x_loc, y_loc, f"{n_cells} cells ({perc_cells}%)", style="italic")
+        cb = fig.colorbar(hb, ax=ax[num], shrink=.75, aspect=10)
+        cb.ax.set_title("Log(CPM)")
+    for noplot in range(num + 1, len(ax)) :
+        ax[noplot].axis("off")
+    fig.text(0.5, 0.03, 'UMAP1', va='center', size = 15)
+    fig.text(0.03, 0.5, 'UMAP2', va='center', rotation='vertical', size = 15)
+    fig.tight_layout()
+    plt.subplots_adjust(left = 0.1, bottom = 0.1)
+
+fig
+
+```
+
+
+```{python fig_3A_genes_gut}
+
+x_loc = np.min(gut1_data.obsm["X_umap"][:,0]) - np.min(gut1_data.obsm["X_umap"][:,0]) * 0.01
+y_loc = np.min(gut1_data.obsm["X_umap"][:,1]) - 0.4
+
+for name, genes in gene_cats.items() :
+    fig, ax = plt.subplots(ncols = 2, nrows = 1, figsize = (7.5, 2.8))
+    ax = ax.ravel()
+
+    for num, gene in enumerate(genes) :
+        # Calculate n cells and percent
+        n_cells = gut1_data[:, gene].X.count_nonzero()
+        perc_cells = n_cells / len(gut1_data) * 100
+        perc_cells = round(perc_cells, 2)
+
+        plot_df = pd.DataFrame(gut1_data[:,gene].X.toarray(), columns = [gene], index = gut1_data.obs_names)
+        plot_df["x"] = gut1_data.obsm["X_umap"][:, 0]
+        plot_df["y"] = gut1_data.obsm["X_umap"][:, 1]
+        hb = ax[num].hexbin(plot_df["x"], plot_df["y"], C=plot_df[gene], cmap=gene_colormap, gridsize=100, edgecolors = "none")
+        ax[num].get_xaxis().set_ticks([])
+        ax[num].get_yaxis().set_ticks([])
+        ax[num].spines['top'].set_visible(False)
+        ax[num].spines['right'].set_visible(False)
+        ax[num].set_title(gene, size = 25)
+        ax[num].text(x_loc, y_loc, f"{n_cells} cells ({perc_cells}%)", style="italic")
+        cb = fig.colorbar(hb, ax=ax[num], shrink=.75, aspect=10)
+        cb.ax.set_title("Log(CPM)")
+    for noplot in range(num + 1, len(ax)) :
+        ax[noplot].axis("off")
+    fig.text(0.5, 0.03, 'UMAP1', va='center', size = 15)
+    fig.text(0.03, 0.5, 'UMAP2', va='center', rotation='vertical', size = 15)
+    fig.tight_layout()
+    plt.subplots_adjust(left = 0.1, bottom = 0.1)
+
+fig
+
+```
 
 ```{r 3B_lin_modeling, message = FALSE, warning = FALSE, fig.height = 6, fig.width = 6}
 
@@ -546,147 +644,345 @@ plots
 ```
 
 
-```{r fig_3E, warning = FALSE, message = FALSE}
+```{r fig_3E, message = FALSE, warning = FALSE, fig.width = 5, fig.height = 6}
 
-### First the siIEL ###
-gut1_aucell <- read.csv('/projects/home/nealpsmith/projects/kupper/pyscenic/res/gut1/gut1.auc_with_timepoint.csv', row.names = 1)
-colnames(gut1_aucell) <- sapply(colnames(gut1_aucell), function(x) sub("...", "", x, fixed = TRUE))
-gut1_aucell$day <- paste("d", gut1_aucell$day, sep = "")
-gut_day_int <- list("d4" = 0, "d7" = 1, "d10" = 2, "d14" = 3, "d21" = 4, "d32" = 5, "d60" = 6, "d90" = 7)
+heatmap_genes <-c(kupper_trm)
 
-# Filter to just regulons that meet criteria
-gut1_regulon_genes <-read.csv("/projects/home/nealpsmith/projects/kupper/kurd_paper/data/pyscenic/gut1/gut1_regulon_genes.csv",
-                            row.names = 1)
-gut_keep <- intersect(colnames(gut1_regulon_genes), colnames(gut1_aucell))
-gut1_aucell <- gut1_aucell[,c(gut_keep, "day")]
+vsd_kupper <- vst(dds_kupper, blind=TRUE)
+norm_res_kupper <- assay(vsd_kupper)
 
-gut1_aucell$day_int <- sapply(gut1_aucell$day, function(x) gut_day_int[[x]])
+vsd_kurd <- vst(dds_kurd, blind = TRUE)
+norm_res_kurd <- assay(vsd_kurd)
 
-mean_auc_gut <- gut1_aucell %>%
-  reshape2::melt(id.vars = c("day", "day_int")) %>%
-  group_by(day, day_int, variable) %>%
-  summarise(mean_aucell = mean(value)) %>%
-  mutate(tissue = "gut")
-
-# Use lienar model to calculate p-values
-lm_gut <- lapply(unique(mean_auc_gut$variable), function(reg){
-  reg_df <- mean_auc_gut %>%
-    dplyr::filter(variable == reg)
-  lin_model <- summary(lm(mean_aucell ~ day_int, data = reg_df))
-  stat_info <- data.frame(regulon = reg,
-                          gut_r_squared = lin_model$r.squared,
-                          gut_p_val = as.numeric(lin_model$coefficients[,4][2]),
-                          gut_slope = as.numeric(lin_model$coefficients[,1][2]))
+heatmap_mtx <- norm_res_kupper[heatmap_genes,]
+heatmap_mtx <- t(scale(t(heatmap_mtx)))
 
 
-  return(stat_info)
+colnames(heatmap_mtx) <- sapply(colnames(heatmap_mtx), function(x) strsplit(x, "_")[[1]][3])
+
+# Now the clustering
+clustering = hclust(dist(t(heatmap_mtx), method = "euclidean"), method = "ward.D2")
+col_hc <- as.dendrogram(clustering)
+
+col_hc[[1]] <- rev(col_hc[[1]])
+
+temp <- col_hc[[2]][[1]]
+col_hc[[2]][[1]] <- col_hc[[2]][[2]]
+col_hc[[2]][[2]] <- temp
+
+temp <- col_hc[[2]][[2]][[1]]
+col_hc[[2]][[2]][[1]] <- col_hc[[2]][[2]][[2]]
+col_hc[[2]][[2]][[2]] <- temp
+
+# Day bar
+days <- colnames(heatmap_mtx)
+
+# Now make the day annotation
+day_colors = list("Day" = c('D0'= '#fff2ac',
+                            'D2'= '#ffe48c',
+                            'D5'= '#fed16e',
+                            'D10'= '#feb54f',
+                            'D15'= '#fd9941',
+                            'D20'= '#fd7435',
+                            'D25'= '#f94728',
+                            'D30'= '#e6211e',
+                            'D45'= '#cc0a22',
+                            'D60'= '#a80026'))
+
+days <- factor(days, levels = c("D0", "D2", "D5", "D10", "D15", "D20", "D25", "D30", "D45", "D60"))
+days <- droplevels(days)
+day_bar = HeatmapAnnotation("Day" = days, col = day_colors,
+                            show_legend = FALSE, show_annotation_name = FALSE)
+# Heatmap colors
+heatmap_col_fun = colorRamp2(c(min(heatmap_mtx), 0, max(heatmap_mtx)), c("purple", "black", "yellow"))
+
+# Lets make the legends
+day_fill <- sapply(levels(days), function(x) day_colors$Day[as.character(x)])
+day_legend_skin <- Legend(labels = levels(days), legend_gp = gpar(fill = day_fill), title = "timepoint (Skin)")
+
+heatmap_lgd = Legend(col_fun = heatmap_col_fun, title = "z-score", legend_height = unit(4, "cm"), title_position = "topcenter")
+
+# lgd_list <- packLegend(heatmap_lgd, day_legend_skin, column_gap = unit(1,"cm"), direction = "vertical",
+#                      max_height = unit(14, "cm"))
+
+# Now make the split
+ln_de <- read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/pseudobulk/lin_modelling_subclusters/lymph_by_day_all_genes.csv",
+                    row.names = 1)
+
+spleen_de <- read.csv("/projects/home/nealpsmith/projects/kupper/kurd_paper/data/pseudobulk/lin_modelling_subclusters/spleen1_by_day_all_genes.csv",
+                   row.names = 1)
+ln_mem <- ln_de[ln_de$log2FoldChange > 0.2 & ln_de$padj < 0.1 & ln_de$percent_cells > 5,]
+spleen_mem <- spleen_de[spleen_de$log2FoldChange > 0.2 & spleen_de$padj < 0.1 & spleen_de$percent_cells > 5,]
+ln_genes <- ln_mem$gene
+spleen_genes <- spleen_mem$gene
+kupper_tcm <- intersect(ln_mem$gene, spleen_mem$gene)
+
+mem_genes <- kupper_trm[kupper_trm %in% kupper_tcm]
+trm_genes <- kupper_trm[!kupper_trm %in% kupper_tcm]
+heatmap_mtx <- heatmap_mtx[c(trm_genes, mem_genes),]
+
+split <- c(rep("Trm-consensus", length(trm_genes)), rep("memory", length(mem_genes)))
+split <- factor(split, levels = c("Trm-consensus", "memory"))
+
+kupper_hmap = Heatmap(heatmap_mtx, name = "z-score", col = heatmap_col_fun,
+                 top_annotation = day_bar, show_column_names = FALSE, show_row_names = FALSE,
+                 cluster_columns = col_hc, cluster_rows = FALSE, show_heatmap_legend = FALSE,
+                      column_title = "Skin", split = split)
+
+heatmap_mtx_kurd <- norm_res_kurd[heatmap_genes,]
+
+# Get the average of the repeated timepoints
+colname_to_tmpt <- lapply(colnames(heatmap_mtx_kurd), function(x) paste("D", tail(strsplit(x, "_")[[1]], n = 1), sep = ""))
+tmpts <- unique(sapply(colnames(heatmap_mtx_kurd), function(x) tail(strsplit(x, "_")[[1]], n = 1)))
+
+heatmap_mtx_kurd <- lapply(tmpts, function(tpt){
+  cols = as.data.frame(heatmap_mtx_kurd[,grepl(glue("*_{tpt}$"), colnames(heatmap_mtx_kurd))])
+  if(ncol(cols) > 1){
+   mean = rowMeans(cols) %>%
+    as.data.frame() %>%
+    `colnames<-`(glue("D{tpt}")) %>%
+     rownames_to_column("gene")
+  return(mean)
+  } else {
+    cols <- cols %>%
+      `colnames<-`(glue("D{tpt}")) %>%
+     rownames_to_column("gene")
+    return(cols)
+  }
 }) %>%
-  do.call(rbind, .)
+  purrr::reduce(left_join, by = "gene") %>%
+  column_to_rownames("gene")
 
-lm_gut$gut_adj_pval <- p.adjust(lm_gut$gut_p_val, method = "fdr")
 
-### Now the Skin ###
-skin1_aucell <- read.csv('/projects/home/nealpsmith/projects/kupper/pyscenic/res/skin1/skin1.auc_with_timepoint.csv', row.names = 1)
-colnames(skin1_aucell) <- sapply(colnames(skin1_aucell), function(x) sub("...", "", x, fixed = TRUE))
-skin1_aucell$day <- paste("d", skin1_aucell$day, sep = "")
-skin_day_int <- list("d5" = 0, "d10" = 1, "d15" = 2, "d20" = 3, "d25" = 4, "d30" = 5, "d45" = 6, "d60" = 7)
+heatmap_mtx_kurd <- t(scale(t(heatmap_mtx_kurd)))
 
-skin1_regulon_genes <- read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/pyscenic/skin1/skin1_regulon_genes.csv",
-                            row.names = 1)
-skin_keep <- intersect(colnames(skin1_regulon_genes), colnames(skin1_aucell))
-skin1_aucell <- skin1_aucell[,c(skin_keep, "day")]
+# colnames(heatmap_mtx_kurd) <- sapply(colnames(heatmap_mtx_kurd), function(x) paste("D", tail(strsplit(x, "_")[[1]], n = 1), sep = ""))
 
-skin1_aucell$day_int <- sapply(skin1_aucell$day, function(x) skin_day_int[[x]])
+# Now the clustering
+clustering = hclust(dist(t(heatmap_mtx_kurd), method = "euclidean"), method = "ward.D2")
+col_hc <- as.dendrogram(clustering)
 
-mean_auc_skin <- skin1_aucell %>%
-  reshape2::melt(id.vars = c("day", "day_int")) %>%
-  group_by(day, day_int, variable) %>%
-  summarise(mean_aucell = mean(value)) %>%
-  mutate(tissue = "skin")
+temp <- col_hc[[2]][[2]][[1]]
+col_hc[[2]][[2]][[1]] <- col_hc[[2]][[2]][[2]]
+col_hc[[2]][[2]][[2]] <- temp
 
-# Use lienar model to calculate p-values
-lm_skin <- lapply(unique(mean_auc_skin$variable), function(reg){
-  reg_df <- mean_auc_skin %>%
-    dplyr::filter(variable == reg)
-  lin_model <- summary(lm(mean_aucell ~ day_int, data = reg_df))
-  stat_info <- data.frame(regulon = reg,
-                          skin_r_squared = lin_model$r.squared,
-                          skin_p_val = as.numeric(lin_model$coefficients[,4][2]),
-                          skin_slope = as.numeric(lin_model$coefficients[,1][2]))
-  return(stat_info)
-}) %>%
-  do.call(rbind, .)
+days <- colnames(heatmap_mtx_kurd)
 
-lm_skin$skin_adj_pval <- p.adjust(lm_skin$skin_p_val, method = "fdr")
+day_colors = list("Day" = c('D0'= '#f5fbc2',
+                            'D3'= '#e7f6b1',
+                            'D4'= '#d1edb3',
+                            'D5'= '#b1e1b6',
+                            'D6'= '#88d0ba',
+                            'D7'= '#63c3bf',
+                            'D10'= '#40b5c4',
+                            'D14'= '#2ba0c2',
+                            'D21'= '#1e88bc',
+                            'D32'= '#216aae',
+                            'D60'= '#2350a1',
+                            'D90'= '#253896'))
 
-# Get rid of the ones that are sig in both for this plot
-skin_sig <- lm_skin[lm_skin$skin_adj_pval < 0.1 & lm_skin$skin_slope > 0,]
-gut_sig <- lm_gut[lm_gut$gut_adj_pval < 0.1 & lm_gut$gut_slope > 0,]
-overlap <- intersect(as.character(skin_sig$regulon), as.character(gut_sig$regulon))
-skin_sig_unique <- skin_sig$regulon[!skin_sig$regulon %in% overlap]
-gut_sig_unique <- gut_sig$regulon[!gut_sig$regulon %in% overlap]
+days <- factor(days, levels = c("D0", "D3", "D4", "D5", "D6", "D7", "D10", "D14", "D21", "D32", "D60", "D90"))
+days <- droplevels(days)
+day_bar = HeatmapAnnotation("Day" = days, col = day_colors,
+                            show_legend = FALSE)
 
-plot_df <- mean_auc_skin %>%
-  dplyr::filter(!variable %in% overlap)
+# Heatmap colors
+heatmap_col_fun = colorRamp2(c(min(heatmap_mtx_kurd), 0, max(heatmap_mtx_kurd)), c("purple", "black", "yellow"))
 
-plot_df$sig <- ifelse(plot_df$variable %in% skin_sig_unique, "sig", "not_sig")
-plot_df$timepoint <- sapply(plot_df$day, function(x) as.numeric(sub("d", "", x)))
-plot_df$timepoint <- factor(plot_df$timepoint)
-plot_df %<>%
-  group_by(variable) %>%
-  mutate(dif_from_start = mean_aucell / mean_aucell[day == "d5"]) %>%
-  mutate(label = ifelse(day == "d60" & sig == "sig", as.character(variable), NA))
+# Lets make the legends
+day_fill <- sapply(levels(days), function(x) day_colors$Day[as.character(x)])
+day_legend_gut <- Legend(labels = levels(days), legend_gp = gpar(fill = day_fill), title = "timepoint (siIEL)")
 
-plot_df$sig <- factor(plot_df$sig, levels = c("not_sig", "sig"))
-p_skin <- ggplot(plot_df, aes(x = timepoint, y = dif_from_start, group = variable, color = sig)) +
-  geom_point(pch = 21, aes(fill = sig)) +
-  scale_fill_manual(values = c("grey", "red")) +
-  scale_color_manual(values = c("grey", "red")) +
-  geom_line() +
-  scale_y_log10() +
-  annotation_logticks(side = "l", outside = TRUE) +
-  coord_cartesian(clip = "off") +
-  geom_hline(yintercept = 1, linetype = "dashed") +
-  xlab("Day") +
-  # ylab("mean AUCell fold-change from baseline") +
-  ggtitle("Skin") +
-  geom_label_repel(data = plot_df[plot_df$day == "d60",], aes(label = label), color = "black", direction = "x", size = 6) +
-  theme_classic(base_size = 20) +
-  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+heatmap_lgd = Legend(col_fun = heatmap_col_fun, title = "z-score", legend_height = unit(4, "cm"), title_position = "topcenter")
 
-plot_df <- mean_auc_gut %>%
-  dplyr::filter(!variable %in% overlap)
+lgd_list <- packLegend(heatmap_lgd, day_legend_skin, day_legend_gut, column_gap = unit(1,"cm"), direction = "vertical",
+                     max_height = unit(20, "cm"))
 
-plot_df$sig <- ifelse(plot_df$variable %in% gut_sig_unique, "sig", "not_sig")
-plot_df$timepoint <- sapply(plot_df$day, function(x) as.numeric(sub("d", "", x)))
-plot_df$timepoint <- factor(plot_df$timepoint)
-plot_df %<>%
-  group_by(variable) %>%
-  mutate(dif_from_start = mean_aucell / mean_aucell[day == "d4"])
+### Lets make another one where we label genes categorically ###
+label_genes <- list("Immediate Early genes" = c("Fosb", "Nr4a3", "Fosl2", "Fos", "Cebpb"),
+                    "hypoxia" = c("Tiparp", "Dusp1", "Klf6", "Rora", "Cdkn1a"),
+                    "anti-proliferative" = c("Cdip1", "Tob2", "Gadd45a", "Irf2bp2", "Klf4", "Dnajb4", "Dnaja1"),
+                    # "other" = c("Id3", "Il21r", "Il4ra", "Itgae", "Tnf"),
+                    "shared memory" = c("Bcl2", "Btg2"#,
+                                        # "Zfp36l1", "Dennd4a"
+                                        ))
 
-label_regs <- c("Rb1", "Foxo3", "Myc", "Elf2")
-plot_df <- plot_df %>%
-  mutate(label = ifelse(day == "d90" & variable %in% label_regs, as.character(variable), NA))
+gene_cols <- c()
+for (set in seq_along(label_genes)){
+  gene_cols <- c(gene_cols, rep(godsnot_102[[set]], length(label_genes[[set]])))
+}
+all_genes <- unlist(label_genes, use.names = FALSE)
+gene_legend <- Legend(labels = names(label_genes), legend_gp = gpar(fill = unique(gene_cols)),
+                      title = "")
 
-plot_df$sig <- factor(plot_df$sig, levels = c("not_sig", "sig"))
-p_gut <- ggplot(plot_df, aes(x = timepoint, y = dif_from_start, group = variable, color = sig)) +
-  geom_point(pch = 21, aes(fill = sig)) +
-  scale_fill_manual(values = c("grey", "red")) +
-  scale_color_manual(values = c("grey", "red")) +
-  geom_line() +
-  scale_y_log10() +
-  annotation_logticks(side = "l", outside = TRUE) +
-  coord_cartesian(clip = "off") +
-  geom_hline(yintercept = 1, linetype = "dashed") +
-  xlab("Day") +
-  # ylab("mean AUCell fold-change from baseline") +
-  ggtitle("siIEL") +
-  geom_label_repel(data = plot_df[plot_df$day == "d90",], aes(label = label), color = "black", size = 6) +
-  theme_classic(base_size = 20) +
-  theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+lgd_list <- packLegend(heatmap_lgd, day_legend_skin, day_legend_gut, gene_legend,
+                       column_gap = unit(1,"cm"), direction = "vertical",
+                       max_height = unit(20, "cm"))
+heatmap_mtx_kurd <- heatmap_mtx_kurd[c(trm_genes, mem_genes),]
 
-figure <- ggarrange(plotlist = list(p_skin, p_gut), common.legend = TRUE)
-annotate_figure(figure, left = textGrob("mean AUCell fold-change from baseline", rot = 90, vjust = 1, gp = gpar(cex = 1.3)),
-                    bottom = textGrob("Day", gp = gpar(cex = 1.3)))
+kurd_hmap = Heatmap(heatmap_mtx_kurd, name = "z-score", col = heatmap_col_fun,
+               top_annotation = day_bar,
+               show_column_names = FALSE,
+               show_row_names = FALSE,
+               cluster_columns = col_hc, show_heatmap_legend = FALSE,
+                    column_title = "siIEL", split = split, cluster_rows = FALSE) +
+  rowAnnotation(link = anno_mark(at = match(all_genes, rownames(heatmap_mtx_kurd)),labels = all_genes,
+                                 labels_gp = gpar(col = gene_cols, fontsize = 12, fontface = "bold")))
+
+hmap_list <- kupper_hmap + kurd_hmap
+draw(hmap_list, heatmap_legend_list = lgd_list)
+
+```
+
+```{r fig_3F, warning = FALSE, message = FALSE, fig.width = 9, fig.height = 6}
+
+milner_sigs <- read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/trm_tcm_signatures_milner_2017.csv")
+milner_trm <- milner_sigs$core_trm_signature
+
+mackay_trm <- c("Cd244a", "Cdh1", "Chn2", "Ctla4", "Hpgds", "Hspa1a", "Icos", "Inpp4b", "Itga1",
+                "Itgae", "Litaf", "Zfp683", "Pcdh10", "Nr4a1", "Nr4a2", "Qpct", "Rgs1", "Rgs2",
+                "Sik1", "Skil", "Tmem123", "Vps37b", "Xcl1")
+
+kupper_trm_filt <- kupper_trm[!kupper_trm %in% kupper_tcm]
+
+upset_list <- list("Trm-consensus" = kupper_trm_filt, "Milner (2017)" = milner_trm, "Mackay (2013)" = mackay_trm)
+
+upset(fromList(upset_list), sets = names(upset_list), order.by = "freq",
+      point.size = 7, line.size = 1.5, keep.order = TRUE,
+      sets.x.label = "# genes", mainbar.y.label = "# overlapping genes",
+      text.scale = c(3.5, 3.5, 2.5, 1.8, 3.5, 0))
+grid.text("Trm gene signatures",x = 0.75, y=0.98, gp=gpar(fontsize=25))
+
+
+```
+
+
+```{r fig_3G, message = FALSE, warning = FALSE, fig.height = 6, fig.width = 4}
+
+data_files <- list.files("/projects/home/nealpsmith/projects/kupper/mackay_2013/data/comp_data", full.names = TRUE)
+
+all_data <- ReadAffy(filenames = data_files)
+eset <- rma(all_data)
+array_df <- data.frame(exprs(eset))
+array_df$probe <- rownames(array_df)
+
+Annot <- data.frame(SYMBOL=sapply(contents(mogene10sttranscriptclusterSYMBOL), paste, collapse=","),
+                    DESC=sapply(contents(mogene10sttranscriptclusterGENENAME), paste, collapse=","),
+                    ENTREZID=sapply(contents(mogene10sttranscriptclusterENTREZID), paste, collapse=","),
+                    ENSEMBLID=sapply(contents(mogene10sttranscriptclusterENSEMBL), paste, collapse=","))
+Annot$probe <- rownames(Annot)
+
+array_df %<>%
+  dplyr::left_join(Annot %>% dplyr::select(SYMBOL, probe), by = "probe")
+kupper_sig_data <- array_df[array_df$SYMBOL %in% kupper_trm_filt,]
+
+heatmap_df <- kupper_sig_data %>%
+  distinct()
+heatmap_df <- heatmap_df[!duplicated(heatmap_df$SYMBOL),]
+rownames(heatmap_df) <- heatmap_df$SYMBOL
+heatmap_df$SYMBOL <- NULL
+heatmap_df$probe <- NULL
+
+colnames(heatmap_df) <- c("Gut_trm1", "Gut_trm2", "Gut_trm3", "Lung_trm1", "Lung_trm2", "Lung_trm3",
+                          "naive_1", "naive_2", "naive_3", "Tcm1", "Tcm2", "Tcm3", "Tem1", "Tem2", "Tem3",
+                          "skin_trm1", "skin_trm2", "skin_trm3")
+# heatmap_df <- heatmap_df[,!grepl("naive", colnames(heatmap_df))]
+
+heatmap_df <- t(scale(t(heatmap_df)))
+
+ # Now the clustering
+clustering = hclust(dist(t(heatmap_df), method = "euclidean"), method = "ward.D2")
+col_hc <- as.dendrogram(clustering)
+
+# Lets get the top bar
+celltype_cols <- list("population" = c("Naive" = "blue",
+                                       "Tcm" = "green",
+                                       "Tem" = "yellow",
+                                       "Trm" = "red"),
+                      "location" = c("Skin" = "#a80026",
+                                     "Gut" = "#036b38",
+                                     "Lung" = "orange",
+                                     "Blood" = "#ADD8E6"))
+
+celltypes <- sapply(colnames(heatmap_df), function(n){
+  if(grepl("trm", tolower(n))){
+    return("Trm")
+  } else if (grepl("naive", tolower(n))){
+    return("Naive")
+  } else if (grepl("tcm", tolower(n))){
+    return("Tcm")
+  } else if (grepl("tem", tolower(n))){
+    return("Tem")
+  }
+})
+
+# Now annitomical location bar
+location <- sapply(colnames(heatmap_df), function(n){
+  if(grepl("skin", tolower(n))){
+    return("Skin")
+  } else if (grepl("gut", tolower(n))){
+    return("Gut")
+  } else if (grepl("lung", tolower(n))){
+    return("Lung")
+  } else {
+    return("Blood")
+  }
+})
+
+annotation_bars = HeatmapAnnotation("population" = celltypes,
+                                    "location" = location,
+                                    col = celltype_cols,
+                            show_legend = FALSE, show_annotation_name = FALSE)
+
+
+# Heatmap colors
+heatmap_col_fun = colorRamp2(c(min(heatmap_df), 0, max(heatmap_df)), c("purple", "black", "yellow"))
+
+kupper_unique <- kupper_trm[!kupper_trm %in% c(milner_trm, mackay_trm)]
+
+label_genes <- rownames(heatmap_df)[rownames(heatmap_df) %in% kupper_unique]
+core_genes <- c("Xcl1", "Sik1", "Rgs1", "Inpp4b")
+
+label_genes <- c(label_genes, core_genes)
+
+cols <- c()
+for (g in label_genes){
+  if (g %in% core_genes){
+    cols <- c(cols, "red")
+  } else {
+    cols <- c(cols, "black")
+  }
+}
+
+# gene_cols <- sapply(rownames(heatmap_df), function(x) ifelse(x %in% kupper_unique, "red", "black"))
+
+# Legends
+heatmap_lgd = Legend(col_fun = heatmap_col_fun, title = "z-score", legend_height = unit(4, "cm"),
+                     title_position = "topcenter")
+
+pop_lgd <- Legend(labels = names(celltype_cols$population),
+                       legend_gp = gpar(fill = unlist(celltype_cols$population)),
+                          title = "Population",
+                          legend_height = unit(4, "cm"),
+                          title_position = "topcenter")
+location_lgd <- Legend(labels = names(celltype_cols$location),
+                       legend_gp = gpar(fill = unlist(celltype_cols$location)),
+                          title = "Location",
+                          legend_height = unit(4, "cm"),
+                          title_position = "topcenter")
+
+lgd_list <- packLegend(heatmap_lgd, pop_lgd, location_lgd, column_gap = unit(1,"cm"), direction = "vertical")
+
+
+hmap = Heatmap(heatmap_df, name = "z-score", col = heatmap_col_fun,
+               show_column_names = FALSE,
+               top_annotation = annotation_bars,
+               # row_names_gp = gpar(col = gene_cols, fontsize = 6),
+               show_heatmap_legend = FALSE,
+               cluster_columns = col_hc) +
+  rowAnnotation(link = anno_mark(at = match(label_genes, rownames(heatmap_df)),labels = label_genes,
+                                 labels_gp = gpar(col = cols, fontsize = 8, fontface = "bold")))
+
+draw(hmap,heatmap_legend_list =lgd_list)
 
 ```

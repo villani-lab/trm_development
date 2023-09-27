@@ -462,3 +462,150 @@ for (gene_oi in c("Fos", "Fosl2", "Fosb", "Junb")){
 ggarrange(plotlist = plot_list, nrow = 2, ncol = 2, common.legend = TRUE)
 
 ```
+
+
+
+```{r fig_3E, warning = FALSE, message = FALSE}
+
+### First the siIEL ###
+# gut1_aucell <- read.csv('/projects/home/nealpsmith/projects/kupper/pyscenic/res/gut1/gut1.auc_with_timepoint.csv', row.names = 1)
+# colnames(gut1_aucell) <- sapply(colnames(gut1_aucell), function(x) sub("...", "", x, fixed = TRUE))
+# gut1_aucell$day <- paste("d", gut1_aucell$day, sep = "")
+# gut_day_int <- list("d4" = 0, "d7" = 1, "d10" = 2, "d14" = 3, "d21" = 4, "d32" = 5, "d60" = 6, "d90" = 7)
+#
+# # Filter to just regulons that meet criteria
+# gut1_regulon_genes <-read.csv("/projects/home/nealpsmith/projects/kupper/kurd_paper/data/pyscenic/gut1/gut1_regulon_genes.csv",
+#                             row.names = 1)
+# gut_keep <- intersect(colnames(gut1_regulon_genes), colnames(gut1_aucell))
+# gut1_aucell <- gut1_aucell[,c(gut_keep, "day")]
+#
+# gut1_aucell$day_int <- sapply(gut1_aucell$day, function(x) gut_day_int[[x]])
+#
+# mean_auc_gut <- gut1_aucell %>%
+#   reshape2::melt(id.vars = c("day", "day_int")) %>%
+#   group_by(day, day_int, variable) %>%
+#   summarise(mean_aucell = mean(value)) %>%
+#   mutate(tissue = "gut")
+#
+# # Use lienar model to calculate p-values
+# lm_gut <- lapply(unique(mean_auc_gut$variable), function(reg){
+#   reg_df <- mean_auc_gut %>%
+#     dplyr::filter(variable == reg)
+#   lin_model <- summary(lm(mean_aucell ~ day_int, data = reg_df))
+#   stat_info <- data.frame(regulon = reg,
+#                           gut_r_squared = lin_model$r.squared,
+#                           gut_p_val = as.numeric(lin_model$coefficients[,4][2]),
+#                           gut_slope = as.numeric(lin_model$coefficients[,1][2]))
+#
+#
+#   return(stat_info)
+# }) %>%
+#   do.call(rbind, .)
+#
+# lm_gut$gut_adj_pval <- p.adjust(lm_gut$gut_p_val, method = "fdr")
+#
+# ### Now the Skin ###
+# skin1_aucell <- read.csv('/projects/home/nealpsmith/projects/kupper/pyscenic/res/skin1/skin1.auc_with_timepoint.csv', row.names = 1)
+# colnames(skin1_aucell) <- sapply(colnames(skin1_aucell), function(x) sub("...", "", x, fixed = TRUE))
+# skin1_aucell$day <- paste("d", skin1_aucell$day, sep = "")
+# skin_day_int <- list("d5" = 0, "d10" = 1, "d15" = 2, "d20" = 3, "d25" = 4, "d30" = 5, "d45" = 6, "d60" = 7)
+#
+# skin1_regulon_genes <- read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/pyscenic/skin1/skin1_regulon_genes.csv",
+#                             row.names = 1)
+# skin_keep <- intersect(colnames(skin1_regulon_genes), colnames(skin1_aucell))
+# skin1_aucell <- skin1_aucell[,c(skin_keep, "day")]
+#
+# skin1_aucell$day_int <- sapply(skin1_aucell$day, function(x) skin_day_int[[x]])
+#
+# mean_auc_skin <- skin1_aucell %>%
+#   reshape2::melt(id.vars = c("day", "day_int")) %>%
+#   group_by(day, day_int, variable) %>%
+#   summarise(mean_aucell = mean(value)) %>%
+#   mutate(tissue = "skin")
+#
+# # Use lienar model to calculate p-values
+# lm_skin <- lapply(unique(mean_auc_skin$variable), function(reg){
+#   reg_df <- mean_auc_skin %>%
+#     dplyr::filter(variable == reg)
+#   lin_model <- summary(lm(mean_aucell ~ day_int, data = reg_df))
+#   stat_info <- data.frame(regulon = reg,
+#                           skin_r_squared = lin_model$r.squared,
+#                           skin_p_val = as.numeric(lin_model$coefficients[,4][2]),
+#                           skin_slope = as.numeric(lin_model$coefficients[,1][2]))
+#   return(stat_info)
+# }) %>%
+#   do.call(rbind, .)
+#
+# lm_skin$skin_adj_pval <- p.adjust(lm_skin$skin_p_val, method = "fdr")
+#
+# # Get rid of the ones that are sig in both for this plot
+# skin_sig <- lm_skin[lm_skin$skin_adj_pval < 0.1 & lm_skin$skin_slope > 0,]
+# gut_sig <- lm_gut[lm_gut$gut_adj_pval < 0.1 & lm_gut$gut_slope > 0,]
+# overlap <- intersect(as.character(skin_sig$regulon), as.character(gut_sig$regulon))
+# skin_sig_unique <- skin_sig$regulon[!skin_sig$regulon %in% overlap]
+# gut_sig_unique <- gut_sig$regulon[!gut_sig$regulon %in% overlap]
+#
+# plot_df <- mean_auc_skin %>%
+#   dplyr::filter(!variable %in% overlap)
+#
+# plot_df$sig <- ifelse(plot_df$variable %in% skin_sig_unique, "sig", "not_sig")
+# plot_df$timepoint <- sapply(plot_df$day, function(x) as.numeric(sub("d", "", x)))
+# plot_df$timepoint <- factor(plot_df$timepoint)
+# plot_df %<>%
+#   group_by(variable) %>%
+#   mutate(dif_from_start = mean_aucell / mean_aucell[day == "d5"]) %>%
+#   mutate(label = ifelse(day == "d60" & sig == "sig", as.character(variable), NA))
+#
+# plot_df$sig <- factor(plot_df$sig, levels = c("not_sig", "sig"))
+# p_skin <- ggplot(plot_df, aes(x = timepoint, y = dif_from_start, group = variable, color = sig)) +
+#   geom_point(pch = 21, aes(fill = sig)) +
+#   scale_fill_manual(values = c("grey", "red")) +
+#   scale_color_manual(values = c("grey", "red")) +
+#   geom_line() +
+#   scale_y_log10() +
+#   annotation_logticks(side = "l", outside = TRUE) +
+#   coord_cartesian(clip = "off") +
+#   geom_hline(yintercept = 1, linetype = "dashed") +
+#   xlab("Day") +
+#   # ylab("mean AUCell fold-change from baseline") +
+#   ggtitle("Skin") +
+#   geom_label_repel(data = plot_df[plot_df$day == "d60",], aes(label = label), color = "black", direction = "x", size = 6) +
+#   theme_classic(base_size = 20) +
+#   theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+#
+# plot_df <- mean_auc_gut %>%
+#   dplyr::filter(!variable %in% overlap)
+#
+# plot_df$sig <- ifelse(plot_df$variable %in% gut_sig_unique, "sig", "not_sig")
+# plot_df$timepoint <- sapply(plot_df$day, function(x) as.numeric(sub("d", "", x)))
+# plot_df$timepoint <- factor(plot_df$timepoint)
+# plot_df %<>%
+#   group_by(variable) %>%
+#   mutate(dif_from_start = mean_aucell / mean_aucell[day == "d4"])
+#
+# label_regs <- c("Rb1", "Foxo3", "Myc", "Elf2")
+# plot_df <- plot_df %>%
+#   mutate(label = ifelse(day == "d90" & variable %in% label_regs, as.character(variable), NA))
+#
+# plot_df$sig <- factor(plot_df$sig, levels = c("not_sig", "sig"))
+# p_gut <- ggplot(plot_df, aes(x = timepoint, y = dif_from_start, group = variable, color = sig)) +
+#   geom_point(pch = 21, aes(fill = sig)) +
+#   scale_fill_manual(values = c("grey", "red")) +
+#   scale_color_manual(values = c("grey", "red")) +
+#   geom_line() +
+#   scale_y_log10() +
+#   annotation_logticks(side = "l", outside = TRUE) +
+#   coord_cartesian(clip = "off") +
+#   geom_hline(yintercept = 1, linetype = "dashed") +
+#   xlab("Day") +
+#   # ylab("mean AUCell fold-change from baseline") +
+#   ggtitle("siIEL") +
+#   geom_label_repel(data = plot_df[plot_df$day == "d90",], aes(label = label), color = "black", size = 6) +
+#   theme_classic(base_size = 20) +
+#   theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+#
+# figure <- ggarrange(plotlist = list(p_skin, p_gut), common.legend = TRUE)
+# annotate_figure(figure, left = textGrob("mean AUCell fold-change from baseline", rot = 90, vjust = 1, gp = gpar(cex = 1.3)),
+#                     bottom = textGrob("Day", gp = gpar(cex = 1.3)))
+
+```
