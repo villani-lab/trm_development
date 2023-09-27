@@ -105,13 +105,13 @@ def file_path(user = getpass.getuser()):
 spleen_data = pg.read_input(os.path.join(file_path(), "kurd_paper", "data", "spleen1_data_subcluster.h5ad"))
 ```
 
-    ## 2023-08-17 13:56:44,664 - pegasus - INFO - Time spent on 'read_input' = 4.55s.
+    ## 2023-09-27 17:05:01,218 - pegasus - INFO - Time spent on 'read_input' = 4.57s.
 
 ``` python
 ln_data = pg.read_input(os.path.join(file_path(), "all_data_analysis", "data", "integrated", "lymph_data_subcluster.h5ad"))
 ```
 
-    ## 2023-08-17 13:56:47,020 - pegasus - INFO - Time spent on 'read_input' = 2.35s.
+    ## 2023-09-27 17:05:03,581 - pegasus - INFO - Time spent on 'read_input' = 2.35s.
 
 ``` python
 ln_data.obs["day"] = [int(d) for d in ln_data.obs["day"]]
@@ -166,7 +166,87 @@ for num, tissue in enumerate(data_dict.keys()) :
 fig
 ```
 
-<img src="supp_figure_5_files/figure-gfm/fig_S5A-1.png" width="960" />
+<img src="supp_figure_5_files/figure-gfm/fig_S5A_umap-1.png" width="960" />
+
+``` python
+
+gene_cats = {"eff_mem_genes" : ["Gzma", "Il7r"]}
+
+x_loc = np.min(spleen_data.obsm["X_umap"][:, 0]) - np.min(spleen_data.obsm["X_umap"][:, 0]) * 0.01
+y_loc = np.min(spleen_data.obsm["X_umap"][:, 1]) - 0.4
+
+for name, genes in gene_cats.items():
+    fig, ax = plt.subplots(ncols=2, nrows=1, figsize=(7.5, 2.8))
+    ax = ax.ravel()
+
+    for num, gene in enumerate(genes):
+        # Calculate n cells and percent
+        n_cells = spleen_data[:, gene].X.count_nonzero()
+        perc_cells = n_cells / len(spleen_data) * 100
+        perc_cells = round(perc_cells, 2)
+
+        plot_df = pd.DataFrame(spleen_data[:, gene].X.toarray(), columns=[gene], index=spleen_data.obs_names)
+        plot_df["x"] = spleen_data.obsm["X_umap"][:, 0]
+        plot_df["y"] = spleen_data.obsm["X_umap"][:, 1]
+        hb = ax[num].hexbin(plot_df["x"], plot_df["y"], C=plot_df[gene], cmap=gene_colormap, gridsize=100,
+                            edgecolors="none")
+        ax[num].get_xaxis().set_ticks([])
+        ax[num].get_yaxis().set_ticks([])
+        ax[num].spines['top'].set_visible(False)
+        ax[num].spines['right'].set_visible(False)
+        ax[num].set_title(gene, size=25)
+        ax[num].text(x_loc, y_loc, f"{n_cells} cells ({perc_cells}%)", style="italic")
+        cb = fig.colorbar(hb, ax=ax[num], shrink=.75, aspect=10)
+        cb.ax.set_title("Log(CPM)")
+    for noplot in range(num + 1, len(ax)):
+        ax[noplot].axis("off")
+    fig.text(0.5, 0.03, 'UMAP1', va='center', size=15)
+    fig.text(0.03, 0.5, 'UMAP2', va='center', rotation='vertical', size=15)
+    fig.tight_layout()
+    plt.subplots_adjust(left=0.1, bottom=0.1)
+
+fig
+```
+
+<img src="supp_figure_5_files/figure-gfm/fig_S5A_genes_spleen-3.png" width="720" />
+
+``` python
+x_loc = np.min(ln_data.obsm["X_umap"][:,0]) - np.min(ln_data.obsm["X_umap"][:,0]) * 0.01
+y_loc = np.min(ln_data.obsm["X_umap"][:,1]) - 0.4
+
+for name, genes in gene_cats.items() :
+    fig, ax = plt.subplots(ncols = 2, nrows = 1, figsize = (7.5, 2.8))
+    ax = ax.ravel()
+
+    for num, gene in enumerate(genes) :
+        # Calculate n cells and percent
+        n_cells = ln_data[:, gene].X.count_nonzero()
+        perc_cells = n_cells / len(ln_data) * 100
+        perc_cells = round(perc_cells, 2)
+
+        plot_df = pd.DataFrame(ln_data[:,gene].X.toarray(), columns = [gene], index = ln_data.obs_names)
+        plot_df["x"] = ln_data.obsm["X_umap"][:, 0]
+        plot_df["y"] = ln_data.obsm["X_umap"][:, 1]
+        hb = ax[num].hexbin(plot_df["x"], plot_df["y"], C=plot_df[gene], cmap=gene_colormap, gridsize=100, edgecolors = "none")
+        ax[num].get_xaxis().set_ticks([])
+        ax[num].get_yaxis().set_ticks([])
+        ax[num].spines['top'].set_visible(False)
+        ax[num].spines['right'].set_visible(False)
+        ax[num].set_title(gene, size = 25)
+        ax[num].text(x_loc, y_loc, f"{n_cells} cells ({perc_cells}%)", style="italic")
+        cb = fig.colorbar(hb, ax=ax[num], shrink=.75, aspect=10)
+        cb.ax.set_title("Log(CPM)")
+    for noplot in range(num + 1, len(ax)) :
+        ax[noplot].axis("off")
+    fig.text(0.5, 0.03, 'UMAP1', va='center', size = 15)
+    fig.text(0.03, 0.5, 'UMAP2', va='center', rotation='vertical', size = 15)
+    fig.tight_layout()
+    plt.subplots_adjust(left = 0.1, bottom = 0.1)
+
+fig
+```
+
+<img src="supp_figure_5_files/figure-gfm/fig_S5A_genes_dln-5.png" width="720" />
 
 ``` r
 padj_cutoff = 0.1
@@ -256,7 +336,7 @@ draw.pairwise.venn(length(lymph_genes), length(spleen_genes), length(kupper_tcm)
                    cat.pos = c(180, 180), cat.cex = rep(unit(1, "cm"), 2))
 ```
 
-![](supp_figure_5_files/figure-gfm/fig_S5B-3.png)<!-- -->
+![](supp_figure_5_files/figure-gfm/fig_S5B-7.png)<!-- -->
 
     ## (polygon[GRID.polygon.11], polygon[GRID.polygon.12], polygon[GRID.polygon.13], polygon[GRID.polygon.14], text[GRID.text.15], text[GRID.text.16], text[GRID.text.17], text[GRID.text.18], text[GRID.text.19])
 
