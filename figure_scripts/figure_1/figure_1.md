@@ -6,6 +6,11 @@ library(reticulate)
 library(gtools)
 library(tidyverse)
 library(ggplot2)
+library(circlize)
+library(ComplexHeatmap)
+library(magrittr)
+library(glue)
+library(gtools)
 
 use_python("/projects/home/nealpsmith/.conda/envs/old_peg_github/bin/python")
 ```
@@ -77,40 +82,7 @@ filtered2_no_skin2 = pg.read_input(
     os.path.join(file_path(), "data", "integrated", "filtered2_no_skin2_harmonized_with_subclust.h5ad"))
 ```
 
-    ## 2023-08-09 16:28:58,786 - pegasus - INFO - Time spent on 'read_input' = 4.99s.
-
-``` python
-
-genes =  ["Cd3d", "Cd8a", "Trbc2"]
-
-ncols = int(round(np.sqrt(len(genes))))
-fig, ax = plt.subplots(ncols = ncols, nrows = ncols, figsize = (7, 7))
-ax = ax.ravel()
-
-for num, gene in enumerate(genes) :
-    plot_df = pd.DataFrame(filtered2_no_skin2[:,gene].X.toarray(), columns = [gene], index = filtered2_no_skin2.obs_names)
-    plot_df["x"] = filtered2_no_skin2.obsm["X_umap"][:, 0]
-    plot_df["y"] = filtered2_no_skin2.obsm["X_umap"][:, 1]
-    hb = ax[num].hexbin(plot_df["x"], plot_df["y"], C=plot_df[gene], cmap=gene_colormap, gridsize=250, edgecolors = "none")
-    _ = ax[num].get_xaxis().set_ticks([])
-    _ = ax[num].get_yaxis().set_ticks([])
-    _ = ax[num].spines['top'].set_visible(False)
-    _ = ax[num].spines['right'].set_visible(False)
-    _ = ax[num].set_title(gene, size = 25)
-    cb = fig.colorbar(hb, ax=ax[num], shrink=.75, aspect=10)
-    _ = cb.ax.set_title("logCPM")
-for noplot in range(num + 1, len(ax)) :
-    ax[noplot].axis("off")
-_ = fig.text(0.5, 0.03, 'UMAP1', va='center', size = 15)
-_ = fig.text(0.03, 0.5, 'UMAP2', va='center', rotation='vertical', size = 15)
-# plt.subplots_adjust(left = 0.1, bottom = 0.1)
-figure = plt.gcf()
-# figure.tight_layout()
-figure.set_size_inches(5, 5)
-figure
-```
-
-<img src="figure_1_files/figure-gfm/fig_1B-1.png" width="480" />
+    ## 2023-09-27 12:49:44,487 - pegasus - INFO - Time spent on 'read_input' = 5.37s.
 
 ``` python
 annot_info = pd.read_csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/supplemental_tables/cluster_annotations.csv")
@@ -130,7 +102,7 @@ legend_elements = [Line2D([0], [0], marker='o', color=col_dict[cl], label=cl,
                    sorted_clusts]
 
 fig, ax = plt.subplots(1)
-plot = sc.pl.umap(filtered2_no_skin2, color="new_clusters",
+plot = sc.pl.embedding(filtered2_no_skin2, basis = "fle", color="new_clusters",
                   legend_loc="on data", show=False, ax=ax,
                   title="", legend_fontoutline=5)
 lgd = ax.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(0.9, 0.5), frameon=False, borderpad=5)
@@ -140,7 +112,7 @@ figure.tight_layout()
 figure
 ```
 
-<img src="figure_1_files/figure-gfm/fig_1C-3.png" width="768" />
+<img src="figure_1_files/figure-gfm/fig_1B-1.png" width="768" />
 
 ``` python
 filtered2_no_skin2.obs["tissue"] = [n if n != "LN" else "dLN" for n in filtered2_no_skin2.obs["tissue"]]
@@ -152,7 +124,7 @@ legend_elements = [Line2D([0], [0], marker='o', color=col_dict[cl], label=cl,
                    sorted(set(filtered2_no_skin2.obs["tissue"]))]
 
 fig, ax = plt.subplots(1)
-plot = sc.pl.umap(filtered2_no_skin2, color="tissue",
+plot = sc.pl.embedding(filtered2_no_skin2, basis = "fle", color="tissue",
                   legend_loc="on data", show=False, ax=ax,
                   title="", legend_fontoutline=5)
 lgd = ax.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
@@ -162,21 +134,40 @@ fig.tight_layout()
 fig
 ```
 
-<img src="figure_1_files/figure-gfm/1D_umap-5.png" width="403" />
+<img src="figure_1_files/figure-gfm/1C_umap-3.png" width="403" />
 
 ``` python
 
-embed = "umap"
+embed = "fle"
 
 fig, ax = plt.subplots()
 plot_df = filtered2_no_skin2.obs[["day"]]
 int_dict = {k: v for k, v in zip(sorted(set(plot_df["day"]), key=int), range(len(set(plot_df["day"]))))}
 plot_df["day_int"] = [int_dict[d] for d in plot_df["day"]]
+```
+
+    ## /projects/home/nealpsmith/.conda/envs/old_peg_github/bin/python:1: SettingWithCopyWarning: 
+    ## A value is trying to be set on a copy of a slice from a DataFrame.
+    ## Try using .loc[row_indexer,col_indexer] = value instead
+    ## 
+    ## See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+
+``` python
 plot_df["x"] = filtered2_no_skin2.obsm[f"X_{embed}"][:, 0]
 plot_df["y"] = filtered2_no_skin2.obsm[f"X_{embed}"][:, 1]
 ax.hexbin(plot_df["x"], plot_df["y"], C=plot_df["day_int"], cmap=day_cmap, gridsize=500, edgecolors = "none")
 ax.get_xaxis().set_ticks([])
+```
+
+    ## []
+
+``` python
 ax.get_yaxis().set_ticks([])
+```
+
+    ## []
+
+``` python
 ax.set_xlabel("{embed}1".format(embed=embed.upper()))
 ax.set_ylabel("{embed}2".format(embed=embed.upper()))
 divider = make_axes_locatable(ax)
@@ -192,7 +183,7 @@ cb.update_ticks()
 fig
 ```
 
-<img src="figure_1_files/figure-gfm/1E_umap-7.png" width="672" />
+<img src="figure_1_files/figure-gfm/1D_umap-5.png" width="672" />
 
 ``` python
 
@@ -207,8 +198,6 @@ clust_perc_by_tissue = pd.DataFrame(filtered2_no_skin2.obs.groupby(["new_cluster
 clust_perc_by_tissue["perc"] = clust_perc_by_tissue.groupby(["new_clusters"])["n_cells"].transform(
     lambda x: x / x.sum())
 ```
-
-<img src="figure_1_files/figure-gfm/calc_props_by_time-9.png" width="672" />
 
 ``` r
 prop_info <- reticulate::py$clust_perc_by_day
@@ -225,7 +214,7 @@ ggplot(prop_info, aes(y = new_clusters, x = perc, fill = day)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 ```
 
-![](figure_1_files/figure-gfm/1D_E_bars-11.png)<!-- -->
+![](figure_1_files/figure-gfm/1C_D_bars-7.png)<!-- -->
 
 ``` r
 prop_info <- reticulate::py$clust_perc_by_tissue
@@ -243,7 +232,139 @@ ggplot(prop_info, aes(y = new_clusters, x = perc, fill = source)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 ```
 
-![](figure_1_files/figure-gfm/1D_E_bars-12.png)<!-- -->
+![](figure_1_files/figure-gfm/1C_D_bars-8.png)<!-- -->
+
+``` r
+count_mtx <- read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/filtered2_no_skin2_harmonized_new_clusters_pseudobulk_on_cluster_only_counts.csv",
+                      row.names = 1)
+meta_data <- read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/filtered2_no_skin2_harmonized_new_clusters_pseudobulk_on_cluster_only_meta.csv",
+                      row.names = 1)
+
+annotation_info <- read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/heatmap_info/filtered2_no_skin2_annotation_genes.csv", row.names = 1)
+colnames(annotation_info) <- sapply(str_replace(colnames(annotation_info), "_", " "), str_to_title)
+norm_counts <- apply(count_mtx, 2, function(c){
+  n_total <- sum(c)
+  per_100k <- (c * 1000000) / n_total
+  return(per_100k)
+})
+norm_counts <- log1p(norm_counts)
+
+all_genes <- apply(annotation_info, 2, function(c){
+  genes <- c[0:(nrow(annotation_info) - 3)]
+  genes <- genes[genes != ""]
+  return(genes)
+}) %>%
+  unlist(use.names = FALSE)
+heatmap_data <- norm_counts[unique(all_genes),]
+heatmap_data <- t(scale(t(heatmap_data)))
+colnames(heatmap_data) <- sapply(colnames(heatmap_data), function(x) paste("Cluster", strsplit(x, "_")[[1]][2]))
+
+clustering = hclust(dist(t(heatmap_data), method = "euclidean"), method = "ward.D2")
+col_hc <- as.dendrogram(clustering)
+
+order <- clustering$labels[clustering$order]
+
+gene_order <- lapply(order, function(x){
+  genes <- annotation_info[[x]][1:(nrow(annotation_info) - 3)]
+  genes <- genes[genes != ""]
+  return(genes)
+}) %>%
+  unlist(use.names = FALSE)
+
+heatmap_data = heatmap_data[gene_order,]
+
+
+label_genes <- lapply(colnames(annotation_info), function(c){
+  genes <- as.character(unlist(annotation_info[1:4,c]))
+  return(genes)
+})
+names(label_genes) <- colnames(annotation_info)
+
+# Some custom labelings for interesting genes
+label_genes$`Cluster 6` <- c("Nfkbid", "Cd69", "Klf6", "Tnf")
+label_genes$`Cluster 3` <- c("Nabp1", "Foxo1", "Il21r", "Cwc25")
+label_genes$`Cluster 2` <- c("Lpxn", "Ifngr1", "Stat4", "Tnfrsf18")
+
+annotation_genes <- unlist(label_genes, use.names = FALSE)
+
+# Now lets organize the color info that will be used for annotations
+col_info = annotation_info %>%
+  t() %>%
+  as.data.frame() %>%
+  dplyr::select(-mean_genes) %>%
+  rownames_to_column(var = "cluster") %>%
+  reshape2::melt(id.vars = c("cluster", "col")) %>%
+  select(-variable)
+
+
+# Get the gene colors
+gene_cols = c()
+for (gene in annotation_genes){
+  color = as.character(filter(col_info, value == gene)["col"][[1]])
+  gene_cols = c(gene_cols, color)
+}
+
+
+mean_genes <- annotation_info["mean_genes",] %>%
+  mutate_each(funs(as.numeric(as.character(.)))) %>%
+  select(colnames(heatmap_data)) # To order them like they will be ordered in the heatmap (same as how GEX data was read in)
+
+gene_col_fun <- colorRamp2(c(min(mean_genes), max(mean_genes)), c("#1d111d", "#bbe7c8"))
+gene_bar <-  HeatmapAnnotation("mean # genes" = as.numeric(mean_genes), col = list("mean # genes" = gene_col_fun), show_legend = FALSE)
+gene_lgd <- Legend(col_fun = gene_col_fun, title = "# genes", legend_height = unit(4, "cm"), title_position = "topcenter")
+
+
+heatmap_col_fun = colorRamp2(c(min(heatmap_data), 0, max(heatmap_data)), c("purple", "black", "yellow"))
+heatmap_lgd = Legend(col_fun = heatmap_col_fun, title = "z-score", legend_height = unit(4, "cm"), title_position = "topcenter")
+
+lgd_list <- packLegend(heatmap_lgd, gene_lgd, column_gap = unit(1,"cm"), direction = "horizontal")
+
+
+split <- c()
+for (gene in rownames(heatmap_data)){
+  for (cl in order){
+    if(gene %in% annotation_info[[cl]]){
+      split <- c(split, sub("Cluster", "", cl))
+      break
+    }
+  }
+}
+split <- factor(split, levels = as.character(unique(split)))
+
+
+# Get the cluster colors
+col_label_colors <- c()
+for (clust in colnames(heatmap_data)){
+  color <- col_info %>%
+    select(cluster, col) %>%
+    distinct() %>%
+    filter(cluster == clust)
+  col_label_colors <- c(col_label_colors, as.character(color$col))
+}
+
+# Make block annotation
+clust_cols <- c()
+for (clust in order){
+  color <- col_info %>%
+    select(cluster, col) %>%
+    distinct() %>%
+    filter(cluster == clust)
+  clust_cols <- c(clust_cols, as.character(color$col))
+}
+
+left_annotation =   HeatmapAnnotation(blk = anno_block(gp = gpar(fill = clust_cols, col = clust_cols)),
+                                      which = "row", width = unit(1.5, "mm"))
+heatmap_list = Heatmap(heatmap_data, name = "z-score", col = heatmap_col_fun, cluster_rows = FALSE, cluster_columns = col_hc,
+                       clustering_method_columns = "ward.D2", clustering_distance_columns = "euclidean",
+                       column_dend_reorder = FALSE, top_annotation = gene_bar, show_heatmap_legend = FALSE,
+                       column_names_gp = gpar(col = col_label_colors, fontface = "bold"),
+                       split = split, left_annotation = left_annotation, show_column_names = TRUE) +
+  rowAnnotation(link = anno_mark(at = match(annotation_genes, rownames(heatmap_data)),labels = annotation_genes,
+                                 labels_gp = gpar(col = gene_cols, fontsize = 12, fontface = "bold")))
+draw(heatmap_list, heatmap_legend_list =lgd_list, padding = unit(c(0.5, 0.5, 2, 2), "cm"))
+```
+
+![](figure_1_files/figure-gfm/fig_1E-1.png)<!-- -->
 
 ``` python
 
@@ -261,6 +382,11 @@ fig = plt.gcf()
 fig.set_size_inches(6, 5)
 plt.subplots_adjust(left = 0.1, bottom = 0.2)
 fig.tight_layout()
+```
+
+    ## /projects/home/nealpsmith/.conda/envs/old_peg_github/bin/python:1: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+
+``` python
 fig
 ```
 
