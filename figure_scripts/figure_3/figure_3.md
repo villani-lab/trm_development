@@ -129,13 +129,13 @@ gene_colormap = clr.LinearSegmentedColormap.from_list('gene_cmap', ["#d3d3d3", '
 gut1_data = pg.read_input(os.path.join(file_path(), "kurd_paper", "data", "gut1_data_subcluster.h5ad"))
 ```
 
-    ## 2023-09-27 14:29:30,489 - pegasus - INFO - Time spent on 'read_input' = 2.97s.
+    ## 2024-08-30 15:36:32,697 - pegasus - INFO - Time spent on 'read_input' = 3.01s.
 
 ``` python
 skin1_data = pg.read_input(os.path.join(file_path(), "all_data_analysis", "data", "integrated", "skin1_subcluster.h5ad"))
 ```
 
-    ## 2023-09-27 14:29:31,863 - pegasus - INFO - Time spent on 'read_input' = 1.36s.
+    ## 2024-08-30 15:36:34,259 - pegasus - INFO - Time spent on 'read_input' = 1.55s.
 
 ``` python
 skin1_data.obs["day"] = [int(d) for d in skin1_data.obs["day"]]
@@ -274,7 +274,7 @@ fig
 ``` r
 padj_cutoff = 0.1
 perc_cells_cutoff = 5
-slope_cutoff = 0.2
+slope_cutoff = 0.15
 
 # Load in the counts and metadata
 count_data_kupper <- read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/skin1_subcluster_pseudobulk_on_time_counts.csv", row.names = 1)
@@ -388,30 +388,30 @@ print(skin_only_top_n)
 ```
 
     ##   [1] "S100a4"        "Crip2"         "Crip1"         "Itsn1"        
-    ##   [5] "Ly6g5b"        "Gzmc"          "Styk1"         "Lat2"         
-    ##   [9] "Rab4a"         "Wnt10b"        "Phldb3"        "Gem"          
-    ##  [13] "Chrne"         "Cd74"          "Serpinb1a"     "Usmg5"        
-    ##  [17] "Emp1"          "Maff"          "Ikzf2"         "Ccr1"         
-    ##  [21] "Csrnp1"        "Comt"          "Nfkbid"        "Igsf8"        
-    ##  [25] "Gpr183"        "Tubb2a"        "Sit1"          "Mt2"          
-    ##  [29] "Nr4a1"         "Amz2"          "Pim3"          "Matk"         
-    ##  [33] "Raph1"         "Tuba4a"        "D030056L22Rik" "Sap18b"       
-    ##  [37] "Bpnt1"         "Cobll1"        "Lin54"         "Inf2"         
-    ##  [41] "Pea15a"        "Hspa8"         "Card19"        "Selenop"      
-    ##  [45] "Pag1"          "Vamp1"         "Nek8"          "Ndel1"        
-    ##  [49] "Junb"          "Snrpg"         "Clcf1"         "Cd96"         
-    ##  [53] "Zfp87"         "Fau"           "Cd2ap"         "Insig1"       
-    ##  [57] "Sec31a"        "Ctsw"          "Pdxk"          "Rgcc"         
-    ##  [61] "Arl5b"         "Cd44"          "Leng8"         "Isca1"        
-    ##  [65] "Zfp36l2"       "Tespa1"        "Cd40lg"        "Odc1"         
-    ##  [69] "Sgk1"          "Mafk"          "Ccdc107"       "Malt1"        
-    ##  [73] "Nr4a2"         "Dusp10"        "Cd226"         "Hcst"         
-    ##  [77] "Dtx3"          "Faah"          "Sfn"           "Errfi1"       
-    ##  [81] "Tnfaip3"       "Tbx21"         "Ubald1"        "1190002N15Rik"
-    ##  [85] "Vps37b"        "Birc2"         "Ehd3"          "Crem"         
-    ##  [89] "Fnip1"         "Rnaset2b"      "Lamb3"         "Fbxo34"       
-    ##  [93] "Zfp36"         "Mir142hg"      "Nmt2"          "Slc37a3"      
-    ##  [97] "Litaf"         "Traf4"         "Glul"          "Il2rg"
+    ##   [5] "Plp2"          "Ly6g5b"        "Gzmc"          "Styk1"        
+    ##   [9] "Fam129b"       "Lat2"          "Rab4a"         "Wnt10b"       
+    ##  [13] "Phldb3"        "Gem"           "Smco4"         "Slc7a5"       
+    ##  [17] "Chrne"         "Mt1"           "Cd74"          "Serpinb1a"    
+    ##  [21] "Usmg5"         "Emp1"          "Ikzf2"         "Ccr1"         
+    ##  [25] "Csrnp1"        "Comt"          "Nfkbid"        "Igsf8"        
+    ##  [29] "Gpr183"        "Tubb2a"        "Sit1"          "Anxa11"       
+    ##  [33] "Mt2"           "Hmgb1"         "Nr4a1"         "Nudt4"        
+    ##  [37] "Amz2"          "Pim3"          "Dxo"           "Matk"         
+    ##  [41] "Raph1"         "Tuba4a"        "D030056L22Rik" "Sap18b"       
+    ##  [45] "Serinc3"       "Ier2"          "Bpnt1"         "Cobll1"       
+    ##  [49] "Fam110a"       "Lin54"         "Ndufa12"       "Inf2"         
+    ##  [53] "Smim4"         "Pea15a"        "Hspa8"         "Card19"       
+    ##  [57] "Selenop"       "Pag1"          "Atp2a3"        "Vamp1"        
+    ##  [61] "Nek8"          "Nenf"          "Ndel1"         "Snrpg"        
+    ##  [65] "Clcf1"         "Cd96"          "Snrpf"         "Zfp87"        
+    ##  [69] "Rcbtb2"        "Fbl"           "Fau"           "Cd2ap"        
+    ##  [73] "Insig1"        "Sec31a"        "Ctsw"          "Pdxk"         
+    ##  [77] "Arl5b"         "Cd44"          "Leng8"         "Isca1"        
+    ##  [81] "Zfp36l2"       "Tespa1"        "Cd40lg"        "Odc1"         
+    ##  [85] "Map3k8"        "Sgk1"          "St3gal6"       "Mafk"         
+    ##  [89] "Rcn3"          "Acap1"         "Pofut2"        "Ftl1"         
+    ##  [93] "Ccdc107"       "Malt1"         "Dusp10"        "Cyth1"        
+    ##  [97] "Cd226"         "Vamp2"         "Hcst"          "Dtx3"
 
 ``` r
 # Now for the gut
@@ -427,30 +427,30 @@ print(gut_only_top_n)
 ```
 
     ##   [1] "Hspa1a"        "Hspa1b"        "Klrb1c"        "Cysltr2"      
-    ##   [5] "Il7r"          "Hsph1"         "Gfi1"          "Jun"          
-    ##   [9] "Ddit4"         "Serpina3g"     "Dtx4"          "Klf3"         
-    ##  [13] "Atp8a2"        "Trim56"        "Rhob"          "Zeb2"         
-    ##  [17] "Hist1h1c"      "Fryl"          "Card6"         "Slc43a2"      
-    ##  [21] "Epb41"         "Kcnq1ot1"      "A630072M18Rik" "Mrps6"        
-    ##  [25] "Dnaja4"        "Lmo4"          "D830025C05Rik" "Setd1b"       
-    ##  [29] "Hsp90aa1"      "Cfap97"        "Ahr"           "Hist3h2ba"    
-    ##  [33] "Swt1"          "Gbp8"          "Rnf19b"        "Nbr1"         
-    ##  [37] "AC160336.1"    "Tcf7"          "Slfn8"         "Lilr4b"       
-    ##  [41] "Rc3h2"         "Med13l"        "Tnrc6b"        "Kmt2a"        
-    ##  [45] "Fyco1"         "Mob3c"         "Hsp90ab1"      "Syne1"        
-    ##  [49] "Lman2l"        "Rab11fip2"     "Phc3"          "Chd3"         
-    ##  [53] "Fam120b"       "Utrn"          "Sesn1"         "Lpin2"        
-    ##  [57] "B930036N10Rik" "Clock"         "Aplp2"         "Hspe1"        
-    ##  [61] "Dennd4c"       "Cep350"        "Dhx40"         "Mga"          
-    ##  [65] "Brd1"          "Kdm3b"         "Asxl2"         "Letm2"        
-    ##  [69] "Ints6"         "Rflnb"         "Mycbp2"        "Rnf157"       
-    ##  [73] "Dcaf5"         "Kdm5b"         "Ddit3"         "Slc4a7"       
-    ##  [77] "Ssbp2"         "Mon2"          "Zkscan3"       "Lpar6"        
-    ##  [81] "Txk"           "Tnrc6a"        "Pik3c2a"       "Mxi1"         
-    ##  [85] "Hnrnpa0"       "Abcb1a"        "Fbxl12"        "Prkd3"        
-    ##  [89] "Tox"           "Snhg12"        "Pura"          "Rab20"        
-    ##  [93] "Zfp120"        "Jund"          "Pdcd11"        "Bbx"          
-    ##  [97] "Zfp512"        "Cmip"          "Atxn7"         "Pdk1"
+    ##   [5] "Plscr1"        "Il7r"          "Hsph1"         "Gfi1"         
+    ##   [9] "Jun"           "Ddit4"         "Serpina3g"     "Dtx4"         
+    ##  [13] "Klf3"          "Atp8a2"        "Mirt1"         "Trim56"       
+    ##  [17] "Rhob"          "Zeb2"          "Hist1h1c"      "Gngt2"        
+    ##  [21] "Fryl"          "Card6"         "Slc43a2"       "Epb41"        
+    ##  [25] "Kcnq1ot1"      "Arid5b"        "Tmem37"        "A630072M18Rik"
+    ##  [29] "Mrps6"         "Lmo4"          "D830025C05Rik" "Setd1b"       
+    ##  [33] "Hsp90aa1"      "Baiap3"        "Cd200r4"       "Cfap97"       
+    ##  [37] "Csnk1e"        "Ahr"           "Hist3h2ba"     "Swt1"         
+    ##  [41] "Gbp8"          "Ttf1"          "Frat2"         "L3mbtl3"      
+    ##  [45] "Rnf19b"        "Nbr1"          "Zfp646"        "Itpr1"        
+    ##  [49] "Tcf7"          "Slfn8"         "Lilr4b"        "Rc3h2"        
+    ##  [53] "Med13l"        "Tnrc6b"        "Gimap8"        "Nlk"          
+    ##  [57] "Kmt2a"         "Fyco1"         "Mob3c"         "Fam241a"      
+    ##  [61] "Hsp90ab1"      "Syne1"         "Lman2l"        "Rab11fip2"    
+    ##  [65] "Phc3"          "Chd3"          "Fam120b"       "AI837181"     
+    ##  [69] "Snrk"          "Clec2i"        "Utrn"          "Sesn1"        
+    ##  [73] "Lpin2"         "Ralgapa2"      "B930036N10Rik" "Fam193a"      
+    ##  [77] "Clock"         "Aplp2"         "Hspe1"         "Stat5b"       
+    ##  [81] "Prdm1"         "Dennd4c"       "Cep350"        "Dhx40"        
+    ##  [85] "Mga"           "Brd1"          "Hspd1"         "Trp53inp1"    
+    ##  [89] "Kdm3b"         "Asxl2"         "Zfp281"        "Letm2"        
+    ##  [93] "Ints6"         "Rflnb"         "Mycbp2"        "Rnf157"       
+    ##  [97] "Dcaf5"         "Kdm5b"         "Ddit3"         "Slc4a7"
 
 ``` r
 heatmap_genes <- c(skin_only_top_n, gut_only_top_n)
@@ -906,161 +906,3 @@ draw(hmap_list, heatmap_legend_list = lgd_list)
 ```
 
 ![](figure_3_files/figure-gfm/fig_3E-1.png)<!-- -->
-
-``` r
-milner_sigs <- read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/trm_tcm_signatures_milner_2017.csv")
-milner_trm <- milner_sigs$core_trm_signature
-
-mackay_trm <- c("Cd244a", "Cdh1", "Chn2", "Ctla4", "Hpgds", "Hspa1a", "Icos", "Inpp4b", "Itga1",
-                "Itgae", "Litaf", "Zfp683", "Pcdh10", "Nr4a1", "Nr4a2", "Qpct", "Rgs1", "Rgs2",
-                "Sik1", "Skil", "Tmem123", "Vps37b", "Xcl1")
-
-kupper_trm_filt <- kupper_trm[!kupper_trm %in% kupper_tcm]
-
-upset_list <- list("Trm-consensus" = kupper_trm_filt, "Milner (2017)" = milner_trm, "Mackay (2013)" = mackay_trm)
-
-upset(fromList(upset_list), sets = names(upset_list), order.by = "freq",
-      point.size = 7, line.size = 1.5, keep.order = TRUE,
-      sets.x.label = "# genes", mainbar.y.label = "# overlapping genes",
-      text.scale = c(3.5, 3.5, 2.5, 1.8, 3.5, 0))
-grid.text("Trm gene signatures",x = 0.75, y=0.98, gp=gpar(fontsize=25))
-```
-
-![](figure_3_files/figure-gfm/fig_3F-1.png)<!-- -->
-
-``` r
-data_files <- list.files("/projects/home/nealpsmith/projects/kupper/mackay_2013/data/comp_data", full.names = TRUE)
-
-all_data <- ReadAffy(filenames = data_files)
-eset <- rma(all_data)
-```
-
-    ## Background correcting
-    ## Normalizing
-    ## Calculating Expression
-
-``` r
-array_df <- data.frame(exprs(eset))
-array_df$probe <- rownames(array_df)
-
-Annot <- data.frame(SYMBOL=sapply(contents(mogene10sttranscriptclusterSYMBOL), paste, collapse=","),
-                    DESC=sapply(contents(mogene10sttranscriptclusterGENENAME), paste, collapse=","),
-                    ENTREZID=sapply(contents(mogene10sttranscriptclusterENTREZID), paste, collapse=","),
-                    ENSEMBLID=sapply(contents(mogene10sttranscriptclusterENSEMBL), paste, collapse=","))
-Annot$probe <- rownames(Annot)
-
-array_df %<>%
-  dplyr::left_join(Annot %>% dplyr::select(SYMBOL, probe), by = "probe")
-kupper_sig_data <- array_df[array_df$SYMBOL %in% kupper_trm_filt,]
-
-heatmap_df <- kupper_sig_data %>%
-  distinct()
-heatmap_df <- heatmap_df[!duplicated(heatmap_df$SYMBOL),]
-rownames(heatmap_df) <- heatmap_df$SYMBOL
-heatmap_df$SYMBOL <- NULL
-heatmap_df$probe <- NULL
-
-colnames(heatmap_df) <- c("Gut_trm1", "Gut_trm2", "Gut_trm3", "Lung_trm1", "Lung_trm2", "Lung_trm3",
-                          "naive_1", "naive_2", "naive_3", "Tcm1", "Tcm2", "Tcm3", "Tem1", "Tem2", "Tem3",
-                          "skin_trm1", "skin_trm2", "skin_trm3")
-# heatmap_df <- heatmap_df[,!grepl("naive", colnames(heatmap_df))]
-
-heatmap_df <- t(scale(t(heatmap_df)))
-
- # Now the clustering
-clustering = hclust(dist(t(heatmap_df), method = "euclidean"), method = "ward.D2")
-col_hc <- as.dendrogram(clustering)
-
-# Lets get the top bar
-celltype_cols <- list("population" = c("Naive" = "blue",
-                                       "Tcm" = "green",
-                                       "Tem" = "yellow",
-                                       "Trm" = "red"),
-                      "location" = c("Skin" = "#a80026",
-                                     "Gut" = "#036b38",
-                                     "Lung" = "orange",
-                                     "Blood" = "#ADD8E6"))
-
-celltypes <- sapply(colnames(heatmap_df), function(n){
-  if(grepl("trm", tolower(n))){
-    return("Trm")
-  } else if (grepl("naive", tolower(n))){
-    return("Naive")
-  } else if (grepl("tcm", tolower(n))){
-    return("Tcm")
-  } else if (grepl("tem", tolower(n))){
-    return("Tem")
-  }
-})
-
-# Now annitomical location bar
-location <- sapply(colnames(heatmap_df), function(n){
-  if(grepl("skin", tolower(n))){
-    return("Skin")
-  } else if (grepl("gut", tolower(n))){
-    return("Gut")
-  } else if (grepl("lung", tolower(n))){
-    return("Lung")
-  } else {
-    return("Blood")
-  }
-})
-
-annotation_bars = HeatmapAnnotation("population" = celltypes,
-                                    "location" = location,
-                                    col = celltype_cols,
-                            show_legend = FALSE, show_annotation_name = FALSE)
-
-
-# Heatmap colors
-heatmap_col_fun = colorRamp2(c(min(heatmap_df), 0, max(heatmap_df)), c("purple", "black", "yellow"))
-
-kupper_unique <- kupper_trm[!kupper_trm %in% c(milner_trm, mackay_trm)]
-
-label_genes <- rownames(heatmap_df)[rownames(heatmap_df) %in% kupper_unique]
-core_genes <- c("Xcl1", "Sik1", "Rgs1", "Inpp4b")
-
-label_genes <- c(label_genes, core_genes)
-
-cols <- c()
-for (g in label_genes){
-  if (g %in% core_genes){
-    cols <- c(cols, "red")
-  } else {
-    cols <- c(cols, "black")
-  }
-}
-
-# gene_cols <- sapply(rownames(heatmap_df), function(x) ifelse(x %in% kupper_unique, "red", "black"))
-
-# Legends
-heatmap_lgd = Legend(col_fun = heatmap_col_fun, title = "z-score", legend_height = unit(4, "cm"),
-                     title_position = "topcenter")
-
-pop_lgd <- Legend(labels = names(celltype_cols$population),
-                       legend_gp = gpar(fill = unlist(celltype_cols$population)),
-                          title = "Population",
-                          legend_height = unit(4, "cm"),
-                          title_position = "topcenter")
-location_lgd <- Legend(labels = names(celltype_cols$location),
-                       legend_gp = gpar(fill = unlist(celltype_cols$location)),
-                          title = "Location",
-                          legend_height = unit(4, "cm"),
-                          title_position = "topcenter")
-
-lgd_list <- packLegend(heatmap_lgd, pop_lgd, location_lgd, column_gap = unit(1,"cm"), direction = "vertical")
-
-
-hmap = Heatmap(heatmap_df, name = "z-score", col = heatmap_col_fun,
-               show_column_names = FALSE,
-               top_annotation = annotation_bars,
-               # row_names_gp = gpar(col = gene_cols, fontsize = 6),
-               show_heatmap_legend = FALSE,
-               cluster_columns = col_hc) +
-  rowAnnotation(link = anno_mark(at = match(label_genes, rownames(heatmap_df)),labels = label_genes,
-                                 labels_gp = gpar(col = cols, fontsize = 8, fontface = "bold")))
-
-draw(hmap,heatmap_legend_list =lgd_list)
-```
-
-![](figure_3_files/figure-gfm/fig_3G-1.png)<!-- -->
