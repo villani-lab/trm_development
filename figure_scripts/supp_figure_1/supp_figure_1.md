@@ -1,9 +1,7 @@
----
-title: "Supplemental figure 1"
-output: rmarkdown::github_document
----
+Supplemental figure 1
+================
 
-```{r message=FALSE}
+``` r
 library(reticulate)
 library(gtools)
 library(tidyverse)
@@ -20,8 +18,7 @@ library(ggrepel)
 use_python("/projects/home/nealpsmith/.conda/envs/old_peg_github/bin/python")
 ```
 
-
-```{python message=FALSE}
+``` python
 import getpass
 import pegasus as pg
 import scanpy as sc
@@ -83,11 +80,11 @@ day_cmap = clr.LinearSegmentedColormap.from_list('day_cmap', colors, N=len(color
 
 filtered2_no_skin2 = pg.read_input(
     os.path.join(file_path(), "data", "integrated", "filtered2_no_skin2_harmonized_with_subclust.h5ad"))
-
 ```
 
+<img src="supp_figure_1_files/figure-gfm/unnamed-chunk-2-1.png" width="672" />
 
-```{python fig_S2A}
+``` python
 
 genes =  ["Cd3d", "Cd8a", "Trbc2"]
 
@@ -116,10 +113,11 @@ figure = plt.gcf()
 # figure.tight_layout()
 figure.set_size_inches(5, 5)
 figure
-
 ```
 
-```{python fig_S2B}
+<img src="supp_figure_1_files/figure-gfm/fig_S2A-3.png" width="480" />
+
+``` python
 annot_info = pd.read_csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/supplemental_tables/cluster_annotations.csv")
 annot_info["cluster_number"] = [str(n) for n in annot_info["cluster_number"]]
 annot_dict = dict(zip(annot_info["cluster_number"], annot_info["annotation"]))
@@ -147,8 +145,9 @@ figure.tight_layout()
 figure
 ```
 
+<img src="supp_figure_1_files/figure-gfm/fig_S2B-5.png" width="768" />
 
-```{python S2C}
+``` python
 filtered2_no_skin2.obs["tissue"] = [n if n != "LN" else "dLN" for n in filtered2_no_skin2.obs["tissue"]]
 col_dict = dict(zip(sorted(set(filtered2_no_skin2.obs["tissue"])),
                     filtered2_no_skin2.uns["tissue_colors"]))
@@ -166,10 +165,11 @@ fig = plt.gcf()
 fig.set_size_inches(4.2, 3.7)
 fig.tight_layout()
 fig
-
 ```
 
-```{python S2D}
+<img src="supp_figure_1_files/figure-gfm/S2C-7.png" width="403" />
+
+``` python
 
 embed = "umap"
 
@@ -195,10 +195,11 @@ cb.locator = tick_locator
 cb.update_ticks()
 
 fig
-
 ```
 
-```{r figure_S2E}
+<img src="supp_figure_1_files/figure-gfm/S2D-9.png" width="672" />
+
+``` r
 cell_data = read.csv("/projects/home/nealpsmith/projects/kupper/all_data_analysis/data/integrated/filtered2_no_skin2_harmonized_with_subclust_obs.csv",
                      row.names = 1)
 cell_data$tissue[cell_data$tissue == "LN"] <- "dLN"
@@ -213,8 +214,12 @@ prop_info <- cell_data %>%
   group_by(day, tissue) %>%
   mutate("n_cell_tissue_day" = sum(n_cells)) %>%
   mutate("perc" = n_cells / n_cell_tissue_day)
+```
 
+    ## `summarise()` has grouped output by 'tissue', 'day'. You can override using the
+    ## `.groups` argument.
 
+``` r
 prop_info$day <- factor(prop_info$day, levels = unique(prop_info$day))
 prop_info$new_clusters <- factor(prop_info$new_clusters, levels = mixedsort(unique(prop_info$new_clusters)))
 
@@ -228,11 +233,11 @@ ggplot(prop_info, aes(y = day, x = perc, fill = new_clusters)) +
   theme_classic(base_size = 20) +
   ylab("Day") + xlab("cell fraction") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
-
 ```
 
+![](supp_figure_1_files/figure-gfm/figure_S2E-11.png)<!-- -->
 
-```{python figure_S2F}
+``` python
 
 # Fix the percent mito
 # This isn't working with markdown...don't know why
@@ -269,7 +274,6 @@ figure = plt.gcf()
 figure.set_size_inches(8, 3)
 figure.tight_layout()
 figure
-
-
 ```
 
+<img src="supp_figure_1_files/figure-gfm/figure_S2F-1.png" width="768" />
